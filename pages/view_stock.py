@@ -154,7 +154,7 @@ def show_view_stock():
             st.markdown(styled_card("Highest Stock Item", max_stock_item, "", "#83c5be"), unsafe_allow_html=True)
 
         with col6:
-            st.markdown(styled_card("Different Machine Types", machine_count, "", "#83c5be"), unsafe_allow_html=True)
+            st.markdown(styled_card("Machine Types", machine_count, "", "#83c5be"), unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top:30px'></div>", unsafe_allow_html=True)  # khoảng cách 30px
     # Cảnh báo khi tồn kho thấp (<= 5)
