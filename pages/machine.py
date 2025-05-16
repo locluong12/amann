@@ -26,7 +26,7 @@ def load_machines(engine, selected_group, selected_pos, search_name):
     return df
 
 def show_machine_page():
-    st.markdown("<h1 style='text-align: center;'>🔧 Machine Management</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Machine Management</h1>", unsafe_allow_html=True)
     engine = get_engine()
 
     with engine.connect() as conn:
@@ -81,7 +81,7 @@ def show_machine_page():
     # ======== Lấy danh sách máy ========
     df = load_machines(engine, selected_group, "Tất cả", search_name)
 
-    st.subheader("📋 Danh sách máy")
+    st.subheader("Danh sách máy")
     if not df.empty:
         # Hiển thị dữ liệu dưới dạng bảng
         st.dataframe(df)  # Hiển thị bảng dữ liệu với cột máy và vị trí
