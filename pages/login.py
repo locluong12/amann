@@ -12,6 +12,29 @@ def login_page():
     # Tạo cột để căn giữa
     col1, col2, col3 = st.columns([1, 6, 1])  # Điều chỉnh tỷ lệ cột cho hợp lý
     with col2:
+        # Chèn CSS nhỏ để đổi màu nút login
+        st.markdown("""
+            <style>
+            div.stButton > button {
+                background-color: #2a9d8f;  /* màu xanh dương */
+                color: white;
+                font-weight: 600;
+                width: 100%;
+                padding: 10px 0;
+                border-radius: 6px;
+                border: none;
+                font-size: 16px;
+            }
+            div.stButton > button:hover {
+                background-color: #2a9d8f;
+                color: white;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+    # Tạo cột để căn giữa
+    col1, col2, col3 = st.columns([1, 6, 1])  # Điều chỉnh tỷ lệ cột cho hợp lý
+    with col2:
         # Tạo input cho tên người dùng và mật khẩu
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")

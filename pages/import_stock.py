@@ -36,7 +36,46 @@ def load_import_stock_data(engine):
     return pd.read_sql_query(text(query), engine)
 
 # ---------------------- GIAO DIỆN TRANG VẬT LIỆU ------------------------
+def fetch_import_history(engine, year=None, quarter=None):
+    with engine.connect() as conn:
+        query = """
+            SELECT 
+                ie.date, 
+                sp.material_no as part_id, 
+                sp.description, 
+                ie.quantity, 
+                ie.im_ex_flag,
+                e.name as employee_name, 
+                mp.mc_pos, 
+                ie.reason
+            FROM import_export ie
+            JOIN spare_parts sp ON ie.part_id = sp.material_no
+            LEFT JOIN employees e ON ie.empl_id = e.amann_id
+            LEFT JOIN machine_pos mp ON ie.mc_pos_id = mp.mc_pos
+            WHERE ie.im_ex_flag = 1  -- chỉ lấy nhập kho
+        """
+        params = {}
 
+        if year:
+            query += " AND YEAR(ie.date) = :year"
+            params['year'] = year
+
+        if quarter:
+            quarter_map = {'Q1': 1, 'Q2': 2, 'Q3': 3, 'Q4': 4}
+            quarter_num = quarter_map.get(quarter)
+            if quarter_num is None:
+                raise ValueError(f"Quarter '{quarter}' không hợp lệ. Phải là Q1, Q2, Q3 hoặc Q4.")
+            start_month = (quarter_num - 1) * 3 + 1
+            end_month = start_month + 2
+            query += " AND MONTH(ie.date) BETWEEN :start_month AND :end_month"
+            params['start_month'] = start_month
+            params['end_month'] = end_month
+
+        query += " ORDER BY ie.date DESC"
+
+        result = conn.execute(text(query), params)
+        df = pd.DataFrame(result.fetchall(), columns=result.keys())
+        return df
 def show_material_page():
     st.markdown("<h1 style='text-align: center;'>Import Stock</h1>", unsafe_allow_html=True)
     engine = get_engine()
@@ -48,64 +87,167 @@ def show_material_page():
 
     def plot_import_chart(import_stock_data):
         import_stock_data = import_stock_data[import_stock_data['total_quantity_imported'] > 0]
-
-        selected_date = st.date_input("📅 Chọn ngày để xem thống kê nhập kho", datetime.today())
-
-        # Đảm bảo định dạng ngày đúng
         import_stock_data['import_date'] = pd.to_datetime(import_stock_data['import_date'])
+        import_stock_data['year'] = import_stock_data['import_date'].dt.year
+        import_stock_data['month'] = import_stock_data['import_date'].dt.month
+
+        def get_quarter(month):
+            if 1 <= month <= 3:
+                return "Q1"
+            elif 4 <= month <= 6:
+                return "Q2"
+            elif 7 <= month <= 9:
+                return "Q3"
+            else:
+                return "Q4"
+
+        import_stock_data['quarter'] = import_stock_data['month'].apply(get_quarter)
+
+        # Lấy danh sách năm và quý
+        years = sorted(import_stock_data['year'].unique())
+        quarters = ["Q1", "Q2", "Q3", "Q4"]
+
+        # Khởi tạo session state
+        if "selected_year" not in st.session_state:
+            st.session_state.selected_year = years[0]
+        if "selected_quarter" not in st.session_state:
+            st.session_state.selected_quarter = "Q1"
+
+        # CSS style cho nút ô vuông
+        st.markdown("""
+        <style>
+        .square-button {
+            border: 1px solid #999;
+            background-color: white;
+            padding: 0.5rem 1.2rem;
+            margin: 0.2rem;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .square-button:hover {
+            background-color: #eee;
+        }
+        .selected {
+            background-color: #333;
+            color: white;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        years = sorted(import_stock_data['year'].unique())
+        quarters = ["Q1", "Q2", "Q3", "Q4"]
+
+        # Tạo 2 cột ngang: Năm | Quý
+        col_year, col_quarter = st.columns([2, 2])
+
+        with col_year:
+            st.markdown("<h4 style='text-align: center;'>Chọn năm</h4>", unsafe_allow_html=True)
+
+            year_cols = st.columns(len(years))
+            for i, year in enumerate(years):
+                is_selected = st.session_state.selected_year == year
+                btn_label = f"**{year}**" if is_selected else str(year)
+                with year_cols[i]:
+                    if st.button(btn_label, key=f"year_{year}"):
+                        st.session_state.selected_year = year
+
+        with col_quarter:
+            st.markdown("<h4 style='text-align: center;'>Chọn quý</h4>", unsafe_allow_html=True)
+
+            quarter_cols = st.columns(len(quarters))
+            for i, quarter in enumerate(quarters):
+                is_selected = st.session_state.selected_quarter == quarter
+                btn_label = f"**{quarter}**" if is_selected else quarter
+                with quarter_cols[i]:
+                    if st.button(btn_label, key=f"quarter_{quarter}"):
+                        st.session_state.selected_quarter = quarter
+
+
+        # Lọc dữ liệu
+        selected_year = st.session_state.selected_year
+        selected_quarter = st.session_state.selected_quarter
+
+
+        filtered_data = import_stock_data[
+            (import_stock_data['year'] == selected_year) &
+            (import_stock_data['quarter'] == selected_quarter)
+        ]
+
         
-        # Lọc theo ngày (không so sánh giờ phút)
-        filtered_data = import_stock_data[import_stock_data['import_date'].dt.date == selected_date]
+        total_stock = filtered_data['total_quantity_imported'].sum()
 
-        total_stock = filtered_data['total_quantity_imported'].sum() if not filtered_data.empty else 0
+        st.markdown(f"""
+            <div style='
+                background-color: #38a3a5;
+                padding: 20px;
+                font-size: 22px;
+                color: #f8f7ff;
+                font-weight: bold;
+                text-align: center;
+                border-radius: 12px;
+                box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+                margin-bottom: 20px;
+            '>
+                Total Stock {selected_quarter} năm {selected_year}: 
+                <span style='color: #f8f7ff'>{int(total_stock):,}</span>
+            </div>
+        """, unsafe_allow_html=True)
 
-        fig, ax = plt.subplots(figsize=(10, 4))
-
+        # Vẽ biểu đồ
         if not filtered_data.empty:
+            fig, ax = plt.subplots(figsize=(8, 3), facecolor='none')  # nhỏ hơn, nền trong suốt
+
             sns.barplot(
                 x="material_no",
                 y="total_quantity_imported",
                 data=filtered_data,
                 ax=ax,
-                palette='Reds'
-            )
-            ax.set_title(f"Số lượng nhập kho ngày {selected_date.strftime('%Y-%m-%d')}", fontsize=12)
-            ax.set_xlabel("Material No", fontsize=10)
-            ax.set_ylabel("Số lượng nhập", fontsize=10)
-            plt.xticks(rotation=45, fontsize=8)
-            plt.yticks(fontsize=8)
-
-            ax.text(
-                0.0, 1.05,
-                f"Total Stock:\n{int(total_stock):,}",
-                transform=ax.transAxes,
-                fontsize=9,
-                fontweight='bold',
-                va='bottom',
-                ha='left',
-                bbox=dict(
-                    facecolor='#FFCCCC',
-                    alpha=0.8,
-                    boxstyle='round,pad=0.5',
-                    edgecolor='white',
-                    lw=0
-                )
+                color="#2a9d8f",
+                ci=None
             )
 
+            # Thiết lập biểu đồ
+            ax.set_title("")
+            ax.set_xlabel("Material No", fontsize=9, color='white')
+            ax.set_ylabel("Số lượng nhập", fontsize=9, color='white')
+
+            ax.set_facecolor('none')
+            fig.patch.set_alpha(0)
+
+            # Ẩn viền
+            for spine in ax.spines.values():
+                spine.set_visible(False)
+
+            # Tick màu trắng và nhỏ hơn
+            plt.xticks(rotation=45, fontsize=8, color='white')
+            plt.yticks(fontsize=8, color='white')
+
+            # Ghi giá trị trên cột
             for p in ax.patches:
-                ax.annotate(f"{p.get_height():.0f}", (p.get_x() + p.get_width() / 2., p.get_height()), 
-                            ha='center', va='center', fontsize=8, color='black', xytext=(0, 5), 
-                            textcoords='offset points')
+                height = p.get_height()
+                if height > 0:
+                    ax.annotate(f"{height:.0f}",
+                                (p.get_x() + p.get_width() / 2., height),
+                                ha='center', va='bottom',
+                                fontsize=8, color='white', xytext=(0, 5),
+                                textcoords='offset points')
 
             fig.tight_layout()
             st.pyplot(fig)
         else:
-            st.warning(f"⚠️ Không có dữ liệu nhập kho vào ngày {selected_date.strftime('%Y-%m-%d')}.")
+            st.warning(f"⚠️ Không có dữ liệu nhập kho trong {selected_quarter} năm {selected_year}.")
 
 
 
-    # Gọi hàm
+    # Gọi hàm hiển thị biểu đồ
     plot_import_chart(import_stock_data)
+
+
+
+
+    
     st.markdown("---")
 
     col1, col2 = st.columns(2)
@@ -233,3 +375,6 @@ def show_material_page():
 
                     st.success("✅ Nhập kho thành công.")
                     st.rerun()
+                
+
+         

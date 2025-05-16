@@ -30,155 +30,139 @@ def show_view_stock():
         total_stock = int(df_stock['stock'].sum())
         total_value = int((df_stock['stock'] * df_stock['price']).sum())
 
-        col1, col2 = st.columns(2)
+        
 
-        # Hiển thị tổng tồn kho và giá trị tồn kho
+
+    # --- Thanh lọc dữ liệu ---
+       
+        st.markdown("""
+            <style>
+            /* Đổi màu chữ trong ô input và select box thành trắng */
+            input, select, textarea {
+                color: white !important;
+                background-color: #2a2a2a !important;
+            }
+
+            /* Placeholder (gợi ý nhập liệu) màu xám nhạt cho dễ nhìn */
+            ::placeholder {
+                color: #cccccc !important;
+                opacity: 1;
+            }
+
+            /* Label (nhãn như "Tìm kiếm", "Tồn kho tối thiểu"...) */
+            label {
+                color: white !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+
+        col1, col2, col3, col4 = st.columns(4)
+
         with col1:
-            st.markdown(
-                f"""
-                <div style="border:1px solid #ccc; border-radius:7px; padding:5px; text-align:center; background-color:#008080;">
-                    <h4>Total Stock</h4>
-                    <p style="font-size:24px; font-weight:bold;">{total_stock}</p>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            keyword = st.text_input("Tìm kiếm", placeholder="Nhập mã, mô tả, cost center...")
 
         with col2:
-            st.markdown(
-                f"""
-                <div style="border:1px solid #ccc; border-radius:7px; padding:5px; text-align:center; background-color:#008080;">
-                    <h4>Total Value</h4>
-                    <p style="font-size:24px; font-weight:bold;">{total_value:,.0f} đ</p>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            min_stock_str = st.text_input("Tồn kho tối thiểu", placeholder="VD: 0")
 
-    # Lọc và tìm kiếm dữ liệu
-    machine_types = df_stock['machine_type'].dropna().unique()
-    machine_types = ['Tất cả'] + sorted(machine_types.tolist())
+        with col3:
+            max_stock_str = st.text_input("Tồn kho tối đa", placeholder="VD: 100000")
 
-    # Thanh tìm kiếm và lọc nằm ở đầu trang
-    st.sidebar.header("Lọc Dữ Liệu")
-    keyword = st.sidebar.text_input("🔍 Tìm kiếm", placeholder="Nhập mã, mô tả, cost center...")
-    min_stock_str = st.sidebar.text_input("🔽 Tồn kho tối thiểu", placeholder="Nhập tồn kho tối thiểu")
-    max_stock_str = st.sidebar.text_input("🔼 Tồn kho tối đa", placeholder="Nhập tồn kho tối đa")
-    selected_machine = st.sidebar.selectbox("🛠️ Loại máy", machine_types)
+        with col4:
+            machine_types = df_stock['machine_type'].dropna().unique()
+            machine_types = ['Tất cả'] + sorted(machine_types.tolist())
+            selected_machine = st.selectbox("Loại máy", machine_types)
 
-    # Kiểm tra và chuyển đổi giá trị tồn kho tối thiểu và tối đa thành số
-    try:
-        min_stock = int(min_stock_str) if min_stock_str else 0
-    except ValueError:
-        min_stock = 0
-        st.sidebar.warning("⚠️ Tồn kho tối thiểu không hợp lệ, sử dụng giá trị mặc định là 0.")
+        # --- Chuyển đổi kiểu số ---
+        try:
+            min_stock = int(min_stock_str) if min_stock_str else 0
+        except ValueError:
+            min_stock = 0
+            st.warning("⚠️ Tồn kho tối thiểu không hợp lệ.")
 
-    try:
-        max_stock = int(max_stock_str) if max_stock_str else 100000
-    except ValueError:
-        max_stock = 100000
-        st.sidebar.warning("⚠️ Tồn kho tối đa không hợp lệ, sử dụng giá trị mặc định là 100000.")
+        try:
+            max_stock = int(max_stock_str) if max_stock_str else 100000
+        except ValueError:
+            max_stock = 100000
+            st.warning("⚠️ Tồn kho tối đa không hợp lệ.")
 
-    # Lọc dữ liệu
-    df_filtered = df_stock.copy()
+        # --- Lọc dữ liệu ---
+        df_filtered = df_stock.copy()
 
-    if keyword.strip():
-        kw = keyword.strip().lower()
-        df_filtered = df_filtered[ 
-            df_filtered['material_no'].astype(str).str.lower().str.contains(kw, na=False) |
-            df_filtered['part_no'].astype(str).str.lower().str.contains(kw, na=False) |
-            df_filtered['description'].astype(str).str.lower().str.contains(kw, na=False) |
-            df_filtered['bin'].astype(str).str.lower().str.contains(kw, na=False) |
-            df_filtered['cost_center'].astype(str).str.lower().str.contains(kw, na=False)
+        if keyword.strip():
+            kw = keyword.strip().lower()
+            df_filtered = df_filtered[
+                df_filtered['material_no'].astype(str).str.lower().str.contains(kw, na=False) |
+                df_filtered['part_no'].astype(str).str.lower().str.contains(kw, na=False) |
+                df_filtered['description'].astype(str).str.lower().str.contains(kw, na=False) |
+                df_filtered['bin'].astype(str).str.lower().str.contains(kw, na=False) |
+                df_filtered['cost_center'].astype(str).str.lower().str.contains(kw, na=False)
+            ]
+
+        df_filtered = df_filtered[
+            (df_filtered['stock'] >= min_stock) & (df_filtered['stock'] <= max_stock)
         ]
 
-    df_filtered = df_filtered[
-        (df_filtered['stock'] >= min_stock) & (df_filtered['stock'] <= max_stock)
-    ]
+        if selected_machine != 'Tất cả':
+            df_filtered = df_filtered[df_filtered['machine_type'] == selected_machine]
 
-    if selected_machine != 'Tất cả':
-        df_filtered = df_filtered[df_filtered['machine_type'] == selected_machine]
+        # --- Tính toán thống kê ---
+        total_stock = df_filtered['stock'].sum()
+        total_value = (df_filtered['stock'] * df_filtered['price']).sum()
+        low_stock_count = len(df_filtered[df_filtered['stock'] < 5])
+        total_items = len(df_filtered)
+        machine_count = df_filtered['machine_type'].nunique()
+        try:
+            max_stock_item = df_filtered.loc[df_filtered['stock'].idxmax()]['material_no']
+        except:
+            max_stock_item = "N/A"
 
+        # --- Hiển thị thẻ thông tin (6 ô) ---
+
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
+
+
+        def styled_card(title, value, icon="📦", color="#83c5be"):
+            return f"""
+                <div style="
+                    background-color:{color};
+                    color:white;
+                    padding:15px;
+                    border-radius:12px;
+                    text-align:center;
+                    max-width:220px;
+                    margin:0 auto;
+                    box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+                ">
+                    <div style="font-size:14px;">{icon} <b>{title}</b></div>
+                    <div style="font-size:22px; font-weight:bold;">{value}</div>
+                </div>
+            """
+
+        with col1:
+            st.markdown(styled_card("Number of Items", total_items, ""), unsafe_allow_html=True)
+
+        with col2:
+            st.markdown(styled_card("Total Stock", total_stock, ""), unsafe_allow_html=True)
+
+        with col3:
+            st.markdown(styled_card("Total Stock Value", f"{total_value:,.0f}", ""), unsafe_allow_html=True)
+
+        with col4:
+            st.markdown(styled_card("Low Stock Alert (< 5)", low_stock_count, "", "#83c5be"), unsafe_allow_html=True)
+
+        with col5:
+            st.markdown(styled_card("Highest Stock Item", max_stock_item, "", "#83c5be"), unsafe_allow_html=True)
+
+        with col6:
+            st.markdown(styled_card("Different Machine Types", machine_count, "", "#83c5be"), unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-top:30px'></div>", unsafe_allow_html=True)  # khoảng cách 30px
     # Cảnh báo khi tồn kho thấp (<= 5)
     low_stock_items = df_filtered[df_filtered['stock'] <= 5]
     if not low_stock_items.empty:
         st.warning("⚠️ Một số mặt hàng có tồn kho thấp! Vui lòng kiểm tra các sản phẩm dưới đây.")
 
-    # Hiển thị biểu đồ và thông tin tổng quan
-    # Biểu đồ thanh: tồn kho theo material_no (giới hạn 10 sản phẩm đầu)
-    df_chart = df_filtered.nlargest(10, 'stock')
 
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        # Biểu đồ thanh: tồn kho theo material_no
-        fig_bar = go.Figure(data=[go.Bar(
-            x=df_chart['material_no'],
-            y=df_chart['stock'],
-            marker_color='skyblue'
-        )])
-
-        fig_bar.update_layout(
-            title=dict(
-                text="Top 10 tồn kho cao nhất",  # Tiêu đề
-                x=0.5,  # Căn giữa theo trục x
-                xanchor='center',  # Căn giữa tiêu đề theo trục x
-                yanchor='top',  # Căn tiêu đề ở phía trên
-            ),
-            xaxis_title=None,
-            yaxis_title=None,
-            width=400,
-            height=400,
-            margin=dict(t=30, b=30, l=30, r=30),
-            font=dict(size=10),
-        )
-
-        st.plotly_chart(fig_bar, use_container_width=False)
-
-    with col2:
-        # Biểu đồ tròn: tỷ lệ giá trị tồn kho theo phụ tùng (name)
-        df_filtered['total_value'] = df_filtered['stock'] * df_filtered['price']
-        fig_pie = px.pie(df_filtered, names='material_no', values='total_value', title='Tỷ lệ Giá Trị Tồn Kho')
-
-        fig_pie.update_layout(
-            title=dict(
-                text="Tỷ lệ Giá Trị Tồn Kho",  # Tiêu đề
-                x=0.5,  # Căn giữa theo trục x
-                xanchor='center',  # Căn giữa tiêu đề theo trục x
-                yanchor='top',  # Căn tiêu đề ở phía trên
-            ),
-            width=400,
-            height=400,
-            margin=dict(t=30, b=30, l=30, r=30),
-            font=dict(size=10),
-        )
-
-        st.plotly_chart(fig_pie, use_container_width=False)
-
-    with col3:
-        # Biểu đồ thanh: số ngày tồn kho theo material_no
-        fig_days_in_stock = go.Figure(data=[go.Bar(
-            x=df_filtered['material_no'],
-            y=df_filtered['storage_days'],
-            marker_color='lightcoral'
-        )])
-
-        fig_days_in_stock.update_layout(
-            title=dict(
-                text="Số ngày tồn kho theo Material No",  # Tiêu đề
-                x=0.5,  # Căn giữa theo trục x
-                xanchor='center',  # Căn giữa tiêu đề theo trục x
-                yanchor='top',  # Căn tiêu đề ở phía trên
-            ),
-            xaxis_title="Material No",
-            yaxis_title="Số ngày tồn kho",
-            width=400,
-            height=400,
-            margin=dict(t=30, b=30, l=30, r=30),
-            font=dict(size=10),
-        )
-
-        st.plotly_chart(fig_days_in_stock, use_container_width=False)
     # Lọc dữ liệu
     df_filtered = df_stock.copy()
 
@@ -249,7 +233,7 @@ def show_view_stock():
         st.markdown(
             f"<div style='background-color: #ff4d4d; padding: 20px; font-size: 20px; color: white; font-weight: bold; text-align: center; border-radius: 10px;'>⚠️ Cảnh báo! Có {len(long_stock_items)} sản phẩm đã tồn kho trên 40 ngày! Xử lý ngay!</div>", 
             unsafe_allow_html=True)
-
+    st.markdown("<div style='margin-top:30px'></div>", unsafe_allow_html=True)  # khoảng cách 30px
     # Cấu hình các cột đặc biệt
     gb.configure_selection('single')
 
@@ -263,15 +247,16 @@ def show_view_stock():
 
     # Hiển thị bảng
     grid_response = AgGrid(
-        df_filtered,
-        gridOptions=grid_options,
-        update_mode=GridUpdateMode.SELECTION_CHANGED,
-        data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
-        theme="streamlit",
-        fit_columns_on_grid_load=True,
-        enable_enterprise_modules=True,
-        allow_unsafe_jscode=True
-    )
+    df_filtered,
+    gridOptions=grid_options,
+    update_mode=GridUpdateMode.SELECTION_CHANGED,
+    data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
+    theme="blue",  # đổi từ "streamlit" sang "blue"
+    fit_columns_on_grid_load=True,
+    enable_enterprise_modules=True,
+    allow_unsafe_jscode=True
+)
+
 
     # Hiển thị chi tiết của hàng đã chọn
     selected_rows = grid_response['selected_rows']
@@ -279,7 +264,7 @@ def show_view_stock():
     if selected_rows is not None and len(selected_rows) > 0:
         selected = pd.DataFrame(selected_rows).iloc[0]
 
-        st.markdown("<h3 style='text-align: center;'>📋 Material Details</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center;'>Material Details</h3>", unsafe_allow_html=True)
 
         # Chuyển đổi dữ liệu thành dạng dọc
         detail_data = {
@@ -338,7 +323,19 @@ def show_view_stock():
         excel_buffer = io.BytesIO()
         with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
             df_filtered.to_excel(writer, index=False, sheet_name='Stock')
-
+        st.markdown("""
+        <style>
+        div.stDownloadButton > button:first-child {
+            background-color: #20c997;
+            color: white;
+            border: none;
+        }
+        div.stDownloadButton > button:first-child:hover {
+            background-color: #17a2b8;
+            color: white;
+        }
+        </style>
+        """, unsafe_allow_html=True)
         st.download_button(
             label="📥 Download Excel",
             data=excel_buffer.getvalue(),

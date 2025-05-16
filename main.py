@@ -1,7 +1,5 @@
 import streamlit as st
 import streamlit.components.v1 as components
-import sys
-
 
 # --- Cấu hình trang ---
 st.set_page_config(page_title="Warehouse Management", page_icon="📦", layout="wide")
@@ -9,29 +7,7 @@ st.set_page_config(page_title="Warehouse Management", page_icon="📦", layout="
 # --- Biến cấu hình ---
 ADMIN_PIN = "111222"
 
-# --- Style tuỳ biến ---
-st.markdown("""
-<style>
-    body { background-color: #f4f4f9; color: #333; font-size: 16px; }
-    section[data-testid="stSidebar"] { background-color: #003366; color: white !important; }
-    section[data-testid="stSidebar"] * { color: white !important; }
-    .stSidebar .stTextInput input { color: black !important; background-color: white !important; }
-    .stSidebar .stTextInput input::placeholder { color: white !important; }
-    .sidebar-title { font-size: 18px; font-weight: bold; color: white !important; }
-    div[data-baseweb="select"] > div { background-color: #2c3e90 !important; color: white !important; }
-    div[data-baseweb="select"] > div:hover { background-color: #355caa !important; }
-    .stButton > button { background-color: #0059b3; color: white; border-radius: 8px; font-weight: bold; width: 100%; }
-    .stButton > button:hover { background-color: #004080; }
-    .stButton.active > button { background-color: #001f4d !important; }
-    h1 { font-size: 28px; text-align: center; color: black; padding-top: 50px; }
-    .block-container { padding-top: 2rem; padding-bottom: 2rem; }
-</style>
-""", unsafe_allow_html=True)
-
-# Ẩn sidebar mặc định của Streamlit multi-page
-st.markdown("""<style>[data-testid="stSidebarNav"] { display: none; }</style>""", unsafe_allow_html=True)
-
-# --- Khởi tạo session state ---
+# --- Ẩn sidebar khi chưa đăng nhập ---
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "admin_authenticated" not in st.session_state:
@@ -41,11 +17,91 @@ if "selected_menu" not in st.session_state:
 if "selected_sub_menu" not in st.session_state:
     st.session_state.selected_sub_menu = "View Stock"
 
-# --- Trang đăng nhập ---
 if not st.session_state.authenticated:
+    st.markdown("""
+    <style>
+        section[data-testid="stSidebar"] {
+            display: none;
+        }
+        .appview-container .main {
+            margin-left: 0;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
     from pages.login import login_page
     login_page()
     st.stop()
+
+# --- Style sidebar chữ trắng, nền tối và các style tuỳ biến khác ---
+st.markdown("""
+<style>
+    html, body {
+        background-color: #000000 !important;
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        color: white !important;
+    }
+    .main, .block-container, .stApp {
+        background-color: #000000 !important;
+        min-height: 100vh;
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+        color: white !important;
+    }
+    header, div.block-container > div:first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        background-color: #000000 !important;
+    }
+    section[data-testid="stSidebar"] { 
+        background-color: #222 !important; 
+        color: white !important; 
+    }
+    section[data-testid="stSidebar"] * { 
+        color: white !important; 
+    }
+    .stSidebar .stTextInput input { 
+        color: white !important; 
+        background-color: #1a1a1a !important; 
+    }
+    .stSidebar .stTextInput input::placeholder { 
+        color: #bbb !important; 
+    }
+    div[data-baseweb="select"] > div { 
+        background-color: #2a9d8f !important; 
+        color: white !important; 
+    }
+    div[data-baseweb="select"] > div:hover { 
+        background-color: #2a9d8f !important; 
+    }
+    .stButton > button { 
+        background-color: #2a9d8f; 
+        color: white; 
+        border-radius: 8px; 
+        font-weight: bold; 
+        width: 100%; 
+        border: none;
+    }
+    .stButton > button:hover { 
+        background-color: #2a9d8f; 
+        color: white;
+    }
+    .stButton.active > button { 
+        background-color: #2a9d8f !important; 
+    }
+    h1 { 
+        font-size: 28px; 
+        text-align: center; 
+        color: white; 
+        padding-top: 50px; 
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Ẩn sidebar mặc định của Streamlit multi-page
+st.markdown("""<style>[data-testid="stSidebarNav"] { display: none; }</style>""", unsafe_allow_html=True)
 
 # --- MENU chính ---
 menu = st.sidebar.selectbox(
@@ -118,5 +174,4 @@ elif menu == "Quản lý hệ thống":
         st.session_state.admin_authenticated = False
         st.session_state.selected_menu = "Quản lý kho"
         st.session_state.selected_sub_menu = "View Stock"
-        
         st.rerun()

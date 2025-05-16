@@ -11,22 +11,28 @@ def load_employees():
     with engine.begin() as conn:
         return pd.read_sql("SELECT amann_id, name, title, level, active, birthday, start_date, address, phone_number, email, gender FROM employees", conn)
 
+
+
+
+
 def show_employees():
     st.title("Employee Management")
+    
+    
 
     # 🔁 Load data before use
     employees = load_employees()
 
     # Chuẩn hóa giá trị giới tính
     employees["gender"] = employees["gender"].replace({
-        "Male": "Nam",  # Hoặc "Male" thành "Nam"
-        "Female": "Nữ",  # Hoặc "Female" thành "Nữ"
-        "Nam": "Nam",    # Nếu đã có "Nam"
-        "Nữ": "Nữ"       # Nếu đã có "Nữ"
+        "Male": "Nam",
+        "Female": "Nữ",
+        "Nam": "Nam",
+        "Nữ": "Nữ"
     })
 
     # Create 3 equal-width columns
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
     # --- Bar Chart: Employee Count by Position ---
     with col1:
@@ -39,21 +45,27 @@ def show_employees():
             text='Count',
             labels={'Position': 'Position', 'Count': 'Number of Employees'},
             title="Employee Count by Position",
-            color_discrete_sequence=px.colors.sequential.RdBu
+            color_discrete_sequence=["#2a9d8f"]
         )
 
         fig_title.update_traces(textposition='outside')
         fig_title.update_layout(
             height=400,
-            width=350,  # Set width explicitly
+            width=350,
             margin=dict(t=50, b=30),
-            title_x=0.5
+            title_x=0.5,
+            plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='rgba(0,0,0,0)',
+    font=dict(color='white'),
+    title=dict(
+        font=dict(color='white')
+    ) 
+
         )
         st.plotly_chart(fig_title, use_container_width=True)
 
     # --- Pie Chart: Gender Ratio ---
     with col2:
-        # Biểu đồ Gender, đảm bảo dữ liệu đã được chuẩn hóa
         gender_count = employees["gender"].value_counts().reset_index()
         gender_count.columns = ["gender", "count"]
 
@@ -63,41 +75,48 @@ def show_employees():
             values="count",
             title="Gender Ratio",
             hole=0.4,
-            color_discrete_sequence=["#9c0f23", "#d3363e"]
+            color_discrete_sequence=["#2a9d8f", "#1f7e6d"]
         )
         fig_gender.update_traces(textinfo='label+percent+value')
 
         fig_gender.update_layout(
             height=400,
-            width=350,  # Set width explicitly
+            width=350,
             margin=dict(t=50, b=30),
-            title_x=0.5
+            title_x=0.5,
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white'),
+            title=dict(
+                font=dict(color='white')
+            )  
         )
         st.plotly_chart(fig_gender, use_container_width=True)
 
-    # --- Line Chart: New Employees per Month ---
-    with col3:
-        employees['month'] = pd.to_datetime(employees['start_date'], errors='coerce').dt.to_period('M')
-        monthly_counts = employees['month'].value_counts().sort_index().reset_index()
-        monthly_counts.columns = ['Month', 'New Employees']
-        monthly_counts['Month'] = monthly_counts['Month'].astype(str)
+   
+    st.markdown("""
+    <style>
+    /* Đổi màu chữ tiêu đề tab (tab labels) sang trắng */
+    div[role="tablist"] button[role="tab"] {
+        color: white !important;
+    }
 
-        fig_month = px.line(
-            monthly_counts,
-            x='Month', y='New Employees',
-            markers=True,
-            text='New Employees',
-            title="New Employees per Month",
-            color_discrete_sequence=px.colors.sequential.RdBu
-        )
-        fig_month.update_traces(textposition='top center')
-        fig_month.update_layout(
-            height=400,
-            width=350,  # Set width explicitly
-            margin=dict(t=50, b=30),
-            title_x=0.5
-        )
-        st.plotly_chart(fig_month, use_container_width=True)
+    /* Đổi màu chữ label input sang trắng */
+    label, .css-1v0mbdj.e1fqkh3o3 {
+        color: white !important;
+    }
+
+    /* Đổi màu chữ tiêu đề và text input */
+    .stTextInput label, .stSelectbox label, .stDateInput label, .stTextArea label {
+        color: white !important;
+    }
+
+    /* Đổi màu chữ tiêu đề và input trong dataframe (nếu cần) */
+    div[data-testid="stDataFrameContainer"] {
+        color: white !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 
     # Create tabs for Employee List, Add New Employee, and Update Employee Information
@@ -110,15 +129,11 @@ def show_employees():
         with st.expander("🔍 Search & Filter"):
             search_term = st.text_input("Search (Name / Amann ID / ID)", key="search_all", help="Search by name or ID")
             
-            # Create 2 columns for filters
             col_filter1, col_filter2 = st.columns(2)
             
             with col_filter1:
-                
-                # Ép kiểu cột 'active' sang string để so sánh đúng
                 employees["active"] = employees["active"].astype(str)
 
-                # Status filter
                 status_filter = st.selectbox("Status", options=["All", "Active", "Inactive"], key="filter_status")
 
                 if status_filter == "Active":
@@ -126,46 +141,36 @@ def show_employees():
                 elif status_filter == "Inactive":
                     employees = employees[employees["active"] == "0"]
 
-
-                
-                # Title filter
                 title_filter = st.selectbox(
                     "Position",
                     options=["All"] + sorted(employees["title"].dropna().unique()),
                     key="filter_title"
                 )
                 
-                # Year of joining filter
                 employees['start_year'] = pd.to_datetime(employees['start_date'], errors='coerce').dt.year
                 year_min = int(employees['start_year'].min()) if employees['start_year'].notnull().any() else 2000
                 year_max = int(employees['start_year'].max()) if employees['start_year'].notnull().any() else datetime.date.today().year
                 selected_years = st.multiselect("Joining Year", list(range(year_min, year_max + 1)))
 
             with col_filter2:
-                # Province filter
                 unique_provinces = sorted(employees['address'].dropna().unique())
                 selected_provinces = st.multiselect("Province/City", unique_provinces)
                 
-                # Email keyword filter
                 email_keyword = st.text_input("Email Keyword").lower().strip()
 
-            # Search by name and ID
             if search_term.strip():
                 search_lower = search_term.strip().lower()
                 employees = employees[employees['name'].str.lower().str.contains(search_lower, na=False) |
-                                    employees['amann_id'].str.lower().str.contains(search_lower, na=False)]
+                                      employees['amann_id'].str.lower().str.contains(search_lower, na=False)]
             
-            # Status filter
             if status_filter == "Active":
                 employees = employees[employees["active"] == "1"]
             elif status_filter == "Inactive":
                 employees = employees[employees["active"] == "0"]
 
-            # Position filter
             if title_filter != "All":
                 employees = employees[employees["title"] == title_filter]
 
-            # Display results after filtering
             st.subheader("Employee List")
             if employees.empty:
                 st.warning("No employees to display.")
@@ -208,6 +213,14 @@ def show_employees():
                         st.success(f"Employee '{name}' information updated successfully!")
                 except Exception as e:
                     st.error(f"Update error: {str(e)}")
+        st.markdown("""
+        <style>
+        /* Đổi màu icon lịch trong st.date_input thành đen */
+        [data-baseweb="input"] svg {
+            fill: black !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
     # TAB 3 — Add new employee
     with tab3:
@@ -215,8 +228,8 @@ def show_employees():
         with st.form(key="form_add_emp"):
             amann_id = st.text_input("Amann ID")
             name = st.text_input("Full Name")
-            birthday = st.date_input("Birthday", value=None, min_value=datetime.date(1880, 1, 1))
-            start_date = st.date_input("Joining Date", value=None)
+            birthday = st.date_input("Birthday")
+            start_date = st.date_input("Joining Date")
             address = st.text_input("Address")
             phone_number = st.text_input("Phone Number")
             email = st.text_input("Email")
@@ -227,8 +240,22 @@ def show_employees():
             title = st.selectbox("Position", available_titles)
             level = st.selectbox("Level", available_levels)
             active = st.selectbox("Status", ["1", "0"])
+            st.markdown("""
+        <style>
+        div.stDownloadButton > button:first-child {
+            background-color: #20c997;
+            color: green;
+            border: none;
+        }
+        div.stDownloadButton > button:first-child:hover {
+            background-color: #17a2b8;
+            color: green;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
             submit_add = st.form_submit_button("Add")
+
             if submit_add:
                 if not amann_id.strip() or not name.strip():
                     st.error("Amann ID and Full Name are required!")
@@ -250,19 +277,17 @@ def show_employees():
                                 """), {
                                     "amann_id": amann_id.strip(),
                                     "name": name.strip(),
-                                    "title": title.strip(),
-                                    "level": level.strip(),
+                                    "title": title,
+                                    "level": level,
                                     "active": active,
                                     "birthday": birthday,
                                     "start_date": start_date,
-                                    "address": address,
-                                    "phone_number": phone_number,
-                                    "email": email,
+                                    "address": address.strip(),
+                                    "phone_number": phone_number.strip(),
+                                    "email": email.strip(),
                                     "gender": gender
                                 })
-
                                 conn.commit()
-                                st.success(f"Employee '{name.strip()}' added successfully!")
-                                st.rerun()
+                                st.success("New employee added successfully!")
                     except Exception as e:
-                        st.error(f"Add employee error: {str(e)}")
+                        st.error(f"Error adding employee: {str(e)}")

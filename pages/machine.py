@@ -41,7 +41,29 @@ def show_machine_page():
         st.session_state.search_name = ""
     if 'reload_machines' not in st.session_state:
         st.session_state.reload_machines = False
+    st.markdown("""
+        <style>
+        /* Đổi màu chữ tiêu đề tab (tab labels) sang trắng */
+        div[role="tablist"] button[role="tab"] {
+            color: white !important;
+        }
 
+        /* Đổi màu chữ label input sang trắng */
+        label, .css-1v0mbdj.e1fqkh3o3 {
+            color: white !important;
+        }
+
+        /* Đổi màu chữ tiêu đề và text input */
+        .stTextInput label, .stSelectbox label, .stDateInput label, .stTextArea label {
+            color: white !important;
+        }
+
+        /* Đổi màu chữ tiêu đề và input trong dataframe (nếu cần) */
+        div[data-testid="stDataFrameContainer"] {
+            color: white !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
     # ======== Bộ lọc ngang ========
     col1, col2 = st.columns([2, 2])
 
@@ -71,18 +93,38 @@ def show_machine_page():
         with col1:
             # Biểu đồ số lượng máy theo nhóm
             group_count = df.groupby('group_mc_name').size().reset_index(name='Machine Count')
-            fig1 = px.bar(group_count, x='group_mc_name', y='Machine Count', title="Số lượng máy theo nhóm")
-            st.plotly_chart(fig1)
+            fig1 = px.bar(group_count, x='group_mc_name', y='Machine Count', title="Số lượng máy theo nhóm",
+                        color_discrete_sequence=['#00BFA6'])  # Màu xanh ngọc
+
+            fig1.update_layout(
+    plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='rgba(0,0,0,0)',
+    font=dict(color='white'),  # màu cho axis ticks và labels
+    title=dict(text="Số lượng máy theo nhóm", font=dict(color='white', size=20)),
+    xaxis=dict(title_font=dict(color='white'), tickfont=dict(color='white')),
+    yaxis=dict(title_font=dict(color='white'), tickfont=dict(color='white'))
+)
+
+            st.plotly_chart(fig1, use_container_width=True)
 
         with col2:
             # Biểu đồ số lượng máy theo vị trí
             pos_count = df.groupby('machine_pos').size().reset_index(name='Machine Count')
-            fig2 = px.bar(pos_count, x='machine_pos', y='Machine Count', title="Số lượng máy theo vị trí")
-            st.plotly_chart(fig2)
+            fig2 = px.bar(pos_count, x='machine_pos', y='Machine Count', title="Số lượng máy theo vị trí",
+                        color_discrete_sequence=['#00BFA6'])  # Màu xanh ngọc
 
-    else:
-        st.info("⚠️ Không có dữ liệu phù hợp.")
+            fig2.update_layout(
+    plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='rgba(0,0,0,0)',
+    font=dict(color='white'),
+    title=dict(text="Số lượng máy theo vị trí", font=dict(color='white', size=20)),
+    xaxis=dict(title_font=dict(color='white'), tickfont=dict(color='white')),
+    yaxis=dict(title_font=dict(color='white'), tickfont=dict(color='white'))
+)
 
+            st.plotly_chart(fig2, use_container_width=True)
+
+       
     # ======== Thêm máy mới ========
     st.markdown("---")
     st.subheader("➕ Thêm máy mới")
@@ -92,6 +134,42 @@ def show_machine_page():
         new_name = st.text_input(" Tên máy mới")
         selected_group_new = st.selectbox(" Nhóm máy", list(group_name_to_id.keys()))
         new_pos = st.text_input(" Vị trí máy mới")
+        st.markdown("""
+            <style>
+            /* CSS cho button trong form_submit_button */
+            form div.stButton > button {
+                background-color: #008080 !important;  /* xanh ngọc */
+                color: white !important;
+                font-weight: bold !important;
+                border: none !important;
+            }
+
+            form div.stButton > button:hover {
+                background-color: #006666 !important; /* đậm hơn khi hover */
+                color: white !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+        st.markdown("""
+            <style>
+            div.stDownloadButton > button:first-child {
+                background-color: #20c997;
+                color: white;
+                border: none;
+            }
+            div.stDownloadButton > button:first-child:hover {
+                background-color: #17a2b8;
+                color: white;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+
+
+
+
+
+
 
         submitted = st.form_submit_button("Thêm máy")
 

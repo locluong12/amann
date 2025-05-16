@@ -74,27 +74,32 @@ def manage_spare_parts():
                 styled_df = filtered_parts[display_cols].style.apply(highlight_low_stock, axis=1)
                 st.dataframe(styled_df, use_container_width=True)
 
-    # Hiển thị Top 10 tìm kiếm nhiều nhất
-    if st.session_state.search_counts:
-        st.subheader("Top 10 Material No được tìm kiếm nhiều nhất")
-        search_df = pd.DataFrame([{"material_no": k, "count": v} for k, v in st.session_state.search_counts.items()])
-        search_df = search_df.sort_values("count", ascending=False).head(10)
+    
 
-        # Tạo biểu đồ bar với nhãn
-        chart = alt.Chart(search_df).mark_bar().encode(
-            x=alt.X("material_no:N", title="Material No", sort="-y"),
-            y=alt.Y("count:Q", title="Số lượt tìm"),
-            tooltip=["material_no", "count"]
-        ).properties(width=600, height=400)
 
-        # Thêm nhãn hiển thị số lượng tìm kiếm trên mỗi thanh
-        text = chart.mark_text(dy=-10, color='black').encode(
-            text='count:Q'
-        )
+    st.markdown("""
+    <style>
+    /* Đổi màu chữ tiêu đề tab (tab labels) sang trắng */
+    div[role="tablist"] button[role="tab"] {
+        color: white !important;
+    }
 
-        # Kết hợp biểu đồ bar và nhãn
-        st.altair_chart(chart + text, use_container_width=True)
+    /* Đổi màu chữ label input sang trắng */
+    label, .css-1v0mbdj.e1fqkh3o3 {
+        color: white !important;
+    }
 
+    /* Đổi màu chữ tiêu đề và text input */
+    .stTextInput label, .stSelectbox label, .stDateInput label, .stTextArea label {
+        color: white !important;
+    }
+
+    /* Đổi màu chữ tiêu đề và input trong dataframe (nếu cần) */
+    div[data-testid="stDataFrameContainer"] {
+        color: white !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
     # ------------ CẬP NHẬT ------------ 
     with tab3:
