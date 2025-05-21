@@ -66,9 +66,9 @@ def show_export_stock():
 
    # Khởi tạo state nếu chưa có
     if 'selected_year' not in st.session_state:
-        st.session_state.selected_year = datetime.today().year if datetime.today().year >= 2023 else 2023
+        st.session_state.selected_year = datetime.today().year if datetime.today().year >= 2025 else 2025
     if 'selected_quarter' not in st.session_state:
-        st.session_state.selected_quarter = 'Q4'
+        st.session_state.selected_quarter = 'Q2'
 
     years = [2023, 2024, 2025]
     quarters = ['Q1', 'Q2', 'Q3', 'Q4']
