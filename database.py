@@ -1,8 +1,7 @@
-# database.py
-from sqlalchemy import create_engine
-import pymysql
 
+from sqlalchemy import create_engine
+import streamlit as st
+
+@st.cache_resource
 def get_engine():
-    return create_engine(
-        "mysql+pymysql://admin:Luongloc1210@database-demo.cp2oiuwu4ba1.ap-southeast-2.rds.amazonaws.com:3306/warehouse"
-    )
+    return create_engine('mysql+pymysql://root:Luongloc1210%40@localhost/warehouse')
