@@ -195,49 +195,6 @@ def show_material_page():
             </div>
         """, unsafe_allow_html=True)
 
-        # Vẽ biểu đồ
-        if not filtered_data.empty:
-            fig, ax = plt.subplots(figsize=(8, 3), facecolor='none')  # nhỏ hơn, nền trong suốt
-
-            sns.barplot(
-                x="material_no",
-                y="total_quantity_imported",
-                data=filtered_data,
-                ax=ax,
-                color="#2a9d8f",
-                ci=None
-            )
-
-            # Thiết lập biểu đồ
-            ax.set_title("")
-            ax.set_xlabel("Material No", fontsize=9, color='white')
-            ax.set_ylabel("Số lượng nhập", fontsize=9, color='white')
-
-            ax.set_facecolor('none')
-            fig.patch.set_alpha(0)
-
-            # Ẩn viền
-            for spine in ax.spines.values():
-                spine.set_visible(False)
-
-            # Tick màu trắng và nhỏ hơn
-            plt.xticks(rotation=45, fontsize=8, color='white')
-            plt.yticks(fontsize=8, color='white')
-
-            # Ghi giá trị trên cột
-            for p in ax.patches:
-                height = p.get_height()
-                if height > 0:
-                    ax.annotate(f"{height:.0f}",
-                                (p.get_x() + p.get_width() / 2., height),
-                                ha='center', va='bottom',
-                                fontsize=8, color='white', xytext=(0, 5),
-                                textcoords='offset points')
-
-            fig.tight_layout()
-            st.pyplot(fig)
-        else:
-            st.warning(f"⚠️ Không có dữ liệu nhập kho trong {selected_quarter} năm {selected_year}.")
 
 
 
