@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="warehouse.db" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="browser pragmas query structure" current="0"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="2513"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><table title="employees" custom_title="0" dock_id="2" table="4,9:mainemployees"/><dock_state state="000000ff00000000fd00000001000000020000043c000002befc0100000002fb000000160064006f0063006b00420072006f007700730065003101000000000000043c0000000000000000fb000000160064006f0063006b00420072006f007700730065003201000000000000043c0000011e00ffffff000002580000000000000004000000040000000800000008fc00000000"/><default_encoding codec=""/><browse_table_settings><table schema="main" name="employees" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="63"/><column index="2" value="173"/><column index="3" value="31"/><column index="4" value="35"/><column index="5" value="42"/><column index="6" value="55"/><column index="7" value="239"/><column index="8" value="245"/><column index="9" value="167"/><column index="10" value="213"/><column index="11" value="133"/><column index="12" value="181"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="group_mc" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="29"/><column index="2" value="62"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="import_export" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="51"/><column index="2" value="55"/><column index="3" value="70"/><column index="4" value="55"/><column index="5" value="33"/><column index="6" value="46"/><column index="7" value="70"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="machine" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="93"/><column index="2" value="84"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="machine_pos" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort><column index="0" mode="1"/></sort><column_widths><column index="1" value="175"/><column index="2" value="243"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="machine_type" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="29"/><column index="2" value="78"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table></browse_table_settings></tab_browse><tab_sql><sql name="SQL 1*">INSERT INTO group_mc (id, mc_name)
+VALUES
+(1, 'Chang Yi'),
+(2, 'Fong'),
+(3, 'SSM'),
+(4, 'Graf'),
+(5, 'Ugolini'),
+(6, 'Tecnorama'),
+(7, 'Fadis'),
+(8, 'DETTIN');
+
+INSERT INTO machine (name, group_mc_id)
+VALUES
+('Chang Yi-1', 1),
+('Chang Yi-2', 1),
+('Chang Yi-3', 1),
+('Chang Yi-4', 1),
+('Chang Yi-5', 1),
+('Fong-1', 2),
+('Fong-2', 2),
+('Fong-3', 2),
+('Fong-4', 2),
+('SSM-1', 3),
+('SSM-2', 3),
+('SSM-3', 3),
+('SSM-4', 3),
+('Graf-1', 4),
+('Graf-2', 4),
+('Graf-3', 4),
+('Graf-4', 4),
+('Ugolini-1', 5),
+('Ugolini-2', 5),
+('Ugolini-3', 5),
+('Tecnorama-1', 6),
+('Tecnorama-2', 6),
+('Fadis-1', 7),
+('Fadis-2', 7),
+('DETTIN-1', 8),
+('DETTIN-2', 8),
+('DETTIN-3', 8);
+INSERT INTO machine_type (id, machine)
+VALUES
+(1, 'Chang Yi'),
+(2, 'Fong'),
+(3, 'SSM'),
+(4, 'Graf'),
+(5, 'Ugolini'),
+(6, 'Tecnorama'),
+(7, 'Fadis'),
+(8, 'DETTIN');
+
+
+
+
+INSERT INTO spare_parts (
+    material_no, part_no, description, machine_type_id, bin, cost_center, price, stock, safety_stock, safety_stock_check
+) VALUES
+('5010453', 'CMTME00182', 'Mechanical seal', 1, 'D.10', '753620', 50.00, 10, 20, TRUE),
+('2024868', 'ET8816294009', 'MF86E-SL2HOSESCREWONCONNECTIONWITHMALETHREAD618', 2, 'A2', '753620', 75.00, 150, 30, FALSE),
+('2034850', 'ET8816293001', 'MC1E9-SL2CERAMICSPLITEYELETD68H6D28MM', 1, 'B1', '753620', 20.00, 60, 15, TRUE),
+('2045810', 'ET8816293002', 'MC29E-SL2AGCERAMICSPLITEYELETD65H68D38MM', 1, 'B2', '753620', 25.00, 80, 20, TRUE),
+('2059233', 'ET8816293003', 'MD7A5-SL2PUGLASSCOVERGEARS', 2, 'B3', '753620', 18.00, 40, 10, FALSE),
+('2061934', 'ET8816293004', 'M1E71-SL2SEALRUBBER', 2, 'B4', '753620', 12.50, 90, 25, FALSE),
+('2073344', 'ET8816293005', 'MB509-BEARING60002Z', 1, 'C1', '753620', 10.00, 100, 30, TRUE),
+('2084477', 'ET8816293006', 'MB862-HOSEPVCTRANSPARENT64X1MM', 3, 'C2', '753620', 15.00, 70, 20, TRUE),
+('2095809', 'ET8816293007', 'MAB39-NEEDLEFORPWINDING69MMLI', 3, 'C3', '753620', 7.50, 30, 10, FALSE),
+('2106944', 'ET8816293008', 'MC40B-SUPPLYPACKAGEPLATE', 1, 'C4', '753620', 22.00, 45, 15, TRUE),
+('2117044', 'ET8816293009', 'M5BF7-NAN', 2, 'D1', '753620', 30.00, 50, 20, FALSE);
+
+CREATE TABLE machines (
+    name TEXT PRIMARY KEY,
+    group_mc_id INTEGER,
+    FOREIGN KEY (group_mc_id) REFERENCES machine_groups(id)
+);
+
+
+
+INSERT INTO machine_pos (mc_pos, mc_id)
+VALUES
+('POS1', 'Chang Yi-1'),
+('POS2', 'Chang Yi-1'),
+('POS3', 'Chang Yi-1'),
+('POS4', 'Chang Yi-1'),
+('POS5', 'Chang Yi-1'),
+('FO1', 'Fong-1'),
+('FO2', 'Fong-1'),
+('FO3', 'Fong-1'),
+('FO4', 'Fong-1'),
+('FO5', 'Fong-1'),
+('SM1', 'SSM-1'),
+('SM2', 'SSM-1'),
+('SM3', 'SSM-1'),
+('SM4', 'SSM-1'),
+('GR1', 'Graf-1'),
+('GR2', 'Graf-1'),
+('GR3', 'Graf-1'),
+('GR4', 'Graf-1'),
+('UGO1', 'Ugolini-1'),
+('UGO2', 'Ugolini-1'),
+('UGO3', 'Ugolini-1'),
+('TEC1', 'Tecnorama-1'),
+('TEC2', 'Tecnorama-1'),
+('FAD1', 'Fadis-1'),
+('FAD2', 'Fadis-1'),
+('DET1', 'DETTIN-1'),
+('DET2', 'DETTIN-1'),
+('DET3', 'DETTIN-1');
+
+INSERT INTO employees (
+    amann_id, name, title, level, active, birthday, start_date, address, phone_number, email, gender
+)
+VALUES
+('E001', 'Nguyen Thi Mai', 'Manager', 'Senior', TRUE, '1985-01-15', '2010-03-01', '123 Main St, Hanoi', '0987654321', 'e001@example.com', 'Male'),
+('E002', 'Tran Minh Tu', 'Technician', 'Junior', TRUE, '1990-05-22', '2015-06-10', '456 Park Ave, Ho Chi Minh', '0912345678', 'e002@example.com', 'Female'),
+('E003', 'Le Hoang Nam', 'Operator', 'Junior', TRUE, '1988-11-09', '2012-02-15', '789 Elm St, Danang', '0934567890', 'e003@example.com', 'Male'),
+('E004', 'Pham Minh Quan', 'Manager', 'Senior', TRUE, '1992-07-30', '2016-08-20', '101 Oak Rd, Hanoi', '0978765432', 'e004@example.com', 'Female'),
+('E005', 'Nguyen Hieu Linh', 'Technician', 'Senior', TRUE, '1983-12-05', '2008-01-25', '202 Pine Blvd, Ho Chi Minh', '0903456789', 'e005@example.com', 'Male'),
+('E006', 'Le Bao Trang', 'Operator', 'Junior', TRUE, '1995-03-18', '2017-04-10', '303 Birch Ln, Danang', '0945678901', 'e006@example.com', 'Female'),
+('E007', 'Hoang Thi Thu', 'Manager', 'Senior', TRUE, '1980-10-22', '2005-06-01', '404 Cedar Dr, Hanoi', '0987654322', 'e007@example.com', 'Male'),
+('E008', 'Pham Quang Hieu', 'Technician', 'Junior', TRUE, '1993-02-14', '2019-07-15', '505 Maple Rd, Ho Chi Minh', '0962345678', 'e008@example.com', 'Female'),
+('E009', 'Tran Minh Hai', 'Operator', 'Junior', TRUE, '1987-04-25', '2011-10-05', '606 Pine St, Danang', '0923456789', 'e009@example.com', 'Male'),
+('E010', 'Le Hieu Lan', 'Manager', 'Senior', TRUE, '1991-09-12', '2014-11-30', '707 Oak St, Hanoi', '0972345678', 'e010@example.com', 'Female');
+
+-- Chèn dữ liệu vào bảng import_export với ngày tháng được thay đổi
+INSERT INTO import_export (
+    part_id, quantity, mc_pos_id, empl_id, date, reason, im_ex_flag
+) VALUES
+('5010453', 10, 'POS1', 'E001', '2023-11-15', 'Regular stock replenishment', 1),
+('2024868', 5, 'FO1', 'E002', '2023-12-10', 'Part replacement', 0),
+('2034850', 20, 'SM1', 'E003', '2024-01-05', 'New parts added', 1),
+('2045810', 15, 'SM2', 'E004', '2024-02-20', 'Inventory update', 0),
+('2059233', 30, 'GR1', 'E005', '2023-10-12', 'Urgent repair part', 1),
+('2061934', 25, 'GR2', 'E006', '2023-09-22', 'Stock adjustment', 0),
+('2073344', 50, 'GR3', 'E007', '2024-03-15', 'Order fulfillment', 1),
+('2084477', 70, 'GR4', 'E008', '2024-04-10', 'Replacement part', 0),
+('2095809', 100, 'UGO1', 'E009', '2024-05-05', 'Routine stock update', 1),
+('2106944', 40, 'UGO2', 'E010', '2024-06-18', 'Part maintenance', 0);
+
+
+-- Cập nhật lại email cho bảng employees
+UPDATE employees
+SET email = CASE amann_id
+    WHEN 'E001' THEN 'nguyen.mai@company.com'
+    WHEN 'E002' THEN 'minhtu.tran@company.com'
+    WHEN 'E003' THEN 'hoangnam.le@company.com'
+    WHEN 'E004' THEN 'minhquan.pham@company.com'
+    WHEN 'E005' THEN 'hieulinh.nguyen@company.com'
+    WHEN 'E006' THEN 'baotrang.le@company.com'
+    WHEN 'E007' THEN 'thuthu.hoang@company.com'
+    WHEN 'E008' THEN 'quanghieu.pham@company.com'
+    WHEN 'E009' THEN 'minhhai.tran@company.com'
+    WHEN 'E010' THEN 'hieulan.le@company.com'
+END;
+
+-- Cập nhật cột years_worked cho bảng employees
+UPDATE employees
+SET years_worked = (julianday('now') - julianday(start_date)) / 365.25;
+UPDATE employees
+SET start_date = CASE
+    WHEN amann_id = 'E001' THEN '2020-03-15'
+    WHEN amann_id = 'E002' THEN '2021-06-10'
+    WHEN amann_id = 'E003' THEN '2022-07-22'
+    WHEN amann_id = 'E004' THEN '2020-11-25'
+    WHEN amann_id = 'E005' THEN '2021-01-30'
+    WHEN amann_id = 'E006' THEN '2022-09-14'
+    WHEN amann_id = 'E007' THEN '2023-05-18'
+    WHEN amann_id = 'E008' THEN '2024-02-07'
+    WHEN amann_id = 'E009' THEN '2020-08-11'
+    WHEN amann_id = 'E010' THEN '2023-12-21'
+    ELSE start_date
+END;
+
+UPDATE employees
+SET years_worked = STRFTIME('%Y', 'now') - STRFTIME('%Y', start_date)
+WHERE start_date IS NOT NULL;
+
+</sql><current_tab id="0"/></tab_sql></sqlb_project>
