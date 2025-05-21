@@ -108,7 +108,7 @@ def show_view_stock():
         # --- Tính toán thống kê ---
         total_stock = df_filtered['stock'].sum()
         total_value = (df_filtered['stock'] * df_filtered['price']).sum()
-        low_stock_count = len(df_filtered[df_filtered['stock'] < 5])
+        low_stock_items = df_stock[df_stock['stock'] < df_stock['safety_stock']]
         total_items = len(df_filtered)
         machine_count = df_filtered['machine_type'].nunique()
         try:
@@ -118,7 +118,7 @@ def show_view_stock():
 
         # --- Hiển thị thẻ thông tin (6 ô) ---
 
-        col1, col2, col3, col4, col5, col6 = st.columns(6)
+        col1, col2, col3, col4, col5 = st.columns(5)
 
 
         def styled_card(title, value, icon="📦", color="#83c5be"):
@@ -148,19 +148,15 @@ def show_view_stock():
             st.markdown(styled_card("Total Stock Value", f"{total_value:,.0f}", ""), unsafe_allow_html=True)
 
         with col4:
-            st.markdown(styled_card("Low Stock Alert (< 5)", low_stock_count, "", "#83c5be"), unsafe_allow_html=True)
+            st.markdown(styled_card("Stock < Safety_Stock", len(low_stock_items), "", "#83c5be"), unsafe_allow_html=True)
 
         with col5:
-            st.markdown(styled_card("Highest Stock Item", max_stock_item, "", "#83c5be"), unsafe_allow_html=True)
+            st.markdown(styled_card("Different Machine Types", machine_count, "", "#83c5be"), unsafe_allow_html=True)
 
-        with col6:
-            st.markdown(styled_card("Machine Types", machine_count, "", "#83c5be"), unsafe_allow_html=True)
+        
 
     st.markdown("<div style='margin-top:30px'></div>", unsafe_allow_html=True)  # khoảng cách 30px
-    # Cảnh báo khi tồn kho thấp (<= 5)
-    low_stock_items = df_filtered[df_filtered['stock'] <= 5]
-    if not low_stock_items.empty:
-        st.warning("⚠️ Một số mặt hàng có tồn kho thấp! Vui lòng kiểm tra các sản phẩm dưới đây.")
+ 
 
 
     # Lọc dữ liệu
@@ -190,9 +186,8 @@ def show_view_stock():
     # Ẩn cột image_url và ẩn cột index
     gb.configure_column("image_url", hide=True)
     gb.configure_column("index", hide=True)  # Ẩn cột index
-
-    # Hiển thị số ngày tồn kho như bình thường
-    gb.configure_column("storage_days", header_name="Days in Stock", type=["numericColumn"])
+    gb.configure_column("storage_days", hide=True)
+   
 
     # Cấu hình cột mặc định
     gb.configure_default_column(
@@ -210,30 +205,48 @@ def show_view_stock():
 
     # Cấu hình cột stock để tô màu khi giá trị nhỏ hơn hoặc bằng 5
     gb.configure_column(
-        "stock",
-        cellStyle=JsCode(""" 
-            function(params) {
-                let style = {
-                    textAlign: 'center',
-                    border: '1px solid black',  // Viền vẫn giữ
-                    padding: '10px'  // Tăng padding ô
-                };
-                if (params.value <= 30) {
-                    style.backgroundColor = '#ffff99';  // Tô màu đỏ nhạt cho các giá trị <= 5
-                    style.fontWeight = 'bold';
-                }
-                return style;
+    "stock",
+    cellStyle=JsCode("""
+        function(params) {
+            let style = {
+                textAlign: 'center',
+                border: '1px solid black',
+                padding: '10px'
+            };
+            if (params.value < params.data.safety_stock) {
+                style.backgroundColor = '#ffff99';  // Màu vàng nhạt highlight
+                style.fontWeight = 'bold';
             }
-        """)
-    )
+            return style;
+        }
+    """)
+)
 
-    # Cảnh báo nếu có sản phẩm tồn kho trên 60 ngày
-    long_stock_items = df_stock[df_stock['storage_days'] > 40]
-    if not long_stock_items.empty:
+    
+    
+    
+    # Nếu có ít nhất một sản phẩm tồn kho thấp hơn mức an toàn, hiển thị cảnh báo
+    if not low_stock_items.empty:
         st.markdown(
-            f"<div style='background-color: #ff4d4d; padding: 20px; font-size: 20px; color: white; font-weight: bold; text-align: center; border-radius: 10px;'>⚠️ Cảnh báo! Có {len(long_stock_items)} sản phẩm đã tồn kho trên 40 ngày! Xử lý ngay!</div>", 
-            unsafe_allow_html=True)
-    st.markdown("<div style='margin-top:30px'></div>", unsafe_allow_html=True)  # khoảng cách 30px
+            f"""
+            <div style='background-color: #ff4d4d; padding: 20px; font-size: 20px;
+                        color: white; font-weight: bold; text-align: center; border-radius: 10px;'>
+                ⚠️ Cảnh báo! Có {len(low_stock_items)} sản phẩm có tồn kho thấp hơn mức an toàn! Kiểm tra và bổ sung ngay!
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        with st.expander("Xem chi tiết mã thiếu"):
+            st.dataframe(
+                low_stock_items[[
+                    'material_no', 'part_no', 'description', 'stock', 'safety_stock', 'machine_type', 'bin','cost_center','price','import_date','export_date',
+                ]].reset_index(drop=True),
+                use_container_width=True
+            )
+
+    # Tạo khoảng cách 30px bên dưới
+    st.markdown("<div style='margin-top:30px'></div>", unsafe_allow_html=True)
+
     # Cấu hình các cột đặc biệt
     gb.configure_selection('single')
 
