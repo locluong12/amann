@@ -208,6 +208,21 @@ def show_material_page():
     st.markdown("---")
 
     col1, col2 = st.columns(2)
+    # Chèn CSS để đổi màu chữ thành trắng
+    st.markdown("""
+        <style>
+        /* Đổi màu label thành trắng */
+        label, p, span {
+            color: white !important;
+        }
+
+        /* Có thể tùy chỉnh thêm cho form nếu cần */
+        .stTextInput>div>div>input {
+            color: black; /* text trong ô input giữ nguyên đen nếu bạn muốn */
+            background-color: #f0f2f6;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
     # ---------------------- THÊM MỚI VẬT LIỆU ------------------------
     with col1:
