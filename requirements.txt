@@ -9,3 +9,4 @@ plotly==5.22.0
 SQLAlchemy==2.0.38
 streamlit-aggrid==1.1.4.post1
 PyMySQL==1.1.1
+XlsxWriter==3.2.3
