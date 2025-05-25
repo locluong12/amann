@@ -7,7 +7,8 @@ from database import get_engine
 
 def load_machines(engine, selected_group, selected_pos, search_name):
     query = """
-    SELECT m.name AS machine_name, g.mc_name AS group_mc_name,
+    SELECT g.mc_name AS group_mc_name,
+           m.name AS machine_name,
            mp.mc_pos AS machine_pos
     FROM machine m
     JOIN group_mc g ON m.group_mc_id = g.id
