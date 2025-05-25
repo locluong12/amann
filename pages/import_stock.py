@@ -285,8 +285,9 @@ def show_material_page():
                 st.warning("⚠️ Không tìm thấy linh kiện phù hợp.")
                 selected_part = None
 
-            quantity = st.number_input("Số lượng nhập", min_value=1)
-            input_price = st.number_input("Đơn giá ($)", min_value=0.0, step=0.01)
+            quantity = st.number_input("Số lượng nhập", min_value=1, key="input_quantity")
+            input_price = st.number_input("Đơn giá ($)", min_value=0.0, step=0.01, key="input_price")
+
 
             import_employee = st.selectbox(
                 "Người thực hiện thao tác", 
