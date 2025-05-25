@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # --- Cấu hình trang ---
-st.set_page_config(page_title="Warehouse Management", page_icon="📦", layout="wide")
+st.set_page_config(page_title="Quản lý kho phụ tùng", page_icon="📦", layout="wide")
 
 # --- Biến cấu hình ---
 ADMIN_PIN = "111222"
@@ -15,7 +15,7 @@ if "admin_authenticated" not in st.session_state:
 if "selected_menu" not in st.session_state:
     st.session_state.selected_menu = "Quản lý kho"
 if "selected_sub_menu" not in st.session_state:
-    st.session_state.selected_sub_menu = "View Stock"
+    st.session_state.selected_sub_menu = "Tồn kho"
 
 if not st.session_state.authenticated:
     st.markdown("""
@@ -113,28 +113,28 @@ menu = st.sidebar.selectbox(
 if menu != st.session_state.selected_menu:
     st.session_state.selected_menu = menu
     st.session_state.selected_sub_menu = (
-        "View Stock" if menu == "Quản lý kho" else "Quản lý nhân viên"
+        "Xem tồn kho" if menu == "Quản lý kho" else "Quản lý nhân viên"
     )
     st.rerun()
 
 # --- SUB MENU: Quản lý kho ---
 if menu == "Quản lý kho":
-    sub_menus = ["View Stock", "Import Stock", "Export Stock", "Dashboard"]
+    sub_menus = ["Tồn kho", "Nhập kho", "Xuất kho", "Thống kê"]
     for sub in sub_menus:
         if st.sidebar.button(sub, key=sub, type="primary" if st.session_state.selected_sub_menu == sub else "secondary"):
             st.session_state.selected_sub_menu = sub
             st.rerun()
 
-    if st.session_state.selected_sub_menu == "View Stock":
+    if st.session_state.selected_sub_menu == "Tồn kho":
         from pages.view_stock import show_view_stock
         show_view_stock()
-    elif st.session_state.selected_sub_menu == "Import Stock":
+    elif st.session_state.selected_sub_menu == "Nhập kho":
         from pages.import_stock import show_material_page
         show_material_page()
-    elif st.session_state.selected_sub_menu == "Export Stock":
+    elif st.session_state.selected_sub_menu == "Xuất kho":
         from pages.export_stock import show_export_stock
         show_export_stock()
-    elif st.session_state.selected_sub_menu == "Dashboard":
+    elif st.session_state.selected_sub_menu == "Thống kê":
         from pages.dashboard import show_dashboard
         show_dashboard()
 
@@ -152,7 +152,7 @@ elif menu == "Quản lý hệ thống":
                 st.sidebar.error("❌ Sai mã PIN.")
         st.stop()
 
-    sub_menus = ["Quản lý nhân viên", "Quản lý linh kiện", "Quản lý máy"]
+    sub_menus = ["Quản lý nhân viên", "Quản lý máy móc"]
     for sub in sub_menus:
         if st.sidebar.button(sub, key=sub, type="primary" if st.session_state.selected_sub_menu == sub else "secondary"):
             st.session_state.selected_sub_menu = sub
@@ -161,10 +161,7 @@ elif menu == "Quản lý hệ thống":
     if st.session_state.selected_sub_menu == "Quản lý nhân viên":
         from pages.employees import show_employees
         show_employees()
-    elif st.session_state.selected_sub_menu == "Quản lý linh kiện":
-        from pages.spare_parts import manage_spare_parts
-        manage_spare_parts()
-    elif st.session_state.selected_sub_menu == "Quản lý máy":
+    elif st.session_state.selected_sub_menu == "Quản lý máy móc":
         from pages.machine import show_machine_page
         show_machine_page()
 
@@ -173,5 +170,5 @@ elif menu == "Quản lý hệ thống":
     if st.sidebar.button("Thoát quyền quản lý"):
         st.session_state.admin_authenticated = False
         st.session_state.selected_menu = "Quản lý kho"
-        st.session_state.selected_sub_menu = "View Stock"
+        st.session_state.selected_sub_menu = "Xem tồn kho"
         st.rerun()

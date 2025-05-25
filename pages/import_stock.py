@@ -77,7 +77,7 @@ def fetch_import_history(engine, year=None, quarter=None):
         df = pd.DataFrame(result.fetchall(), columns=result.keys())
         return df
 def show_material_page():
-    st.markdown("<h1 style='text-align: center;'>Import Stock</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Nhập kho</h1>", unsafe_allow_html=True)
     engine = get_engine()
 
     spare_parts = load_spare_parts(engine)
@@ -91,29 +91,18 @@ def show_material_page():
         import_stock_data['year'] = import_stock_data['import_date'].dt.year
         import_stock_data['month'] = import_stock_data['import_date'].dt.month
 
-        def get_quarter(month):
-            if 1 <= month <= 3:
-                return "Q1"
-            elif 4 <= month <= 6:
-                return "Q2"
-            elif 7 <= month <= 9:
-                return "Q3"
-            else:
-                return "Q4"
+        years_in_data = sorted(import_stock_data['year'].unique())
+        years = sorted(set(years_in_data) | set(range(2020, 2031)))
 
-        import_stock_data['quarter'] = import_stock_data['month'].apply(get_quarter)
+        months = list(range(1, 13))
 
-        # Lấy danh sách năm và quý
-        years = sorted(import_stock_data['year'].unique())
-        quarters = ["Q1", "Q2", "Q3", "Q4"]
-
-        # Khởi tạo session state
+        # Khởi tạo session state nếu chưa có
         if "selected_year" not in st.session_state:
             st.session_state.selected_year = years[0]
-        if "selected_quarter" not in st.session_state:
-            st.session_state.selected_quarter = "Q1"
+        if "selected_month" not in st.session_state:
+            st.session_state.selected_month = 1
 
-        # CSS style cho nút ô vuông
+        # CSS style cho nút ô vuông (nếu cần)
         st.markdown("""
         <style>
         .square-button {
@@ -125,57 +114,35 @@ def show_material_page():
             font-weight: bold;
             cursor: pointer;
             transition: 0.3s;
+            text-align: center;
         }
         .square-button:hover {
             background-color: #eee;
         }
         .selected {
-            background-color: #333;
-            color: white;
+            background-color: #333 !important;
+            color: white !important;
         }
         </style>
         """, unsafe_allow_html=True)
 
-        years = sorted(import_stock_data['year'].unique())
-        quarters = ["Q1", "Q2", "Q3", "Q4"]
-
-        # Tạo 2 cột ngang: Năm | Quý
-        col_year, col_quarter = st.columns([2, 2])
+        col_year, col_month = st.columns(2)
 
         with col_year:
-            st.markdown("<h4 style='text-align: center;'>Chọn năm</h4>", unsafe_allow_html=True)
+            selected_year = st.selectbox("Năm", years, index=years.index(st.session_state.selected_year))
+            st.session_state.selected_year = selected_year
 
-            year_cols = st.columns(len(years))
-            for i, year in enumerate(years):
-                is_selected = st.session_state.selected_year == year
-                btn_label = f"**{year}**" if is_selected else str(year)
-                with year_cols[i]:
-                    if st.button(btn_label, key=f"year_{year}"):
-                        st.session_state.selected_year = year
+        with col_month:
+            month_labels = [f"{m:02d}" for m in months]
+            selected_month = st.selectbox("Tháng", month_labels, index=st.session_state.selected_month - 1)
+            st.session_state.selected_month = int(selected_month)
 
-        with col_quarter:
-            st.markdown("<h4 style='text-align: center;'>Chọn quý</h4>", unsafe_allow_html=True)
-
-            quarter_cols = st.columns(len(quarters))
-            for i, quarter in enumerate(quarters):
-                is_selected = st.session_state.selected_quarter == quarter
-                btn_label = f"**{quarter}**" if is_selected else quarter
-                with quarter_cols[i]:
-                    if st.button(btn_label, key=f"quarter_{quarter}"):
-                        st.session_state.selected_quarter = quarter
-
-
-        # Lọc dữ liệu
-        selected_year = st.session_state.selected_year
-        selected_quarter = st.session_state.selected_quarter
-
-
+        # Lọc dữ liệu theo năm và tháng đã chọn
         filtered_data = import_stock_data[
-            (import_stock_data['year'] == selected_year) &
-            (import_stock_data['quarter'] == selected_quarter)
+            (import_stock_data['year'] == st.session_state.selected_year) &
+            (import_stock_data['month'] == st.session_state.selected_month)
         ]
 
-        
         total_stock = filtered_data['total_quantity_imported'].sum()
 
         st.markdown(f"""
@@ -190,11 +157,10 @@ def show_material_page():
                 box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
                 margin-bottom: 20px;
             '>
-                Total Stock {selected_quarter} năm {selected_year}: 
-                <span style='color: #f8f7ff'>{int(total_stock):,}</span>
-            </div>
-        """, unsafe_allow_html=True)
-
+                Tổng nhập kho tháng {st.session_state.selected_month} năm {st.session_state.selected_year}: 
+        <span style='color: #f8f7ff'>{int(total_stock):,} cái</span>
+    </div>
+""", unsafe_allow_html=True)
 
 
 
@@ -224,43 +190,48 @@ def show_material_page():
         </style>
     """, unsafe_allow_html=True)
 
-    # ---------------------- THÊM MỚI VẬT LIỆU ------------------------
+   # ---------------------- THÊM MỚI VẬT LIỆU ------------------------
     with col1:
         st.subheader("Thêm mới vật liệu")
-        with st.expander("Form thêm mới"):
-            new_material_no = st.text_input("Material No")
-            new_description = st.text_input("Description")
+        with st.expander("Mở form"):
+            new_material_no = st.text_input("Mã vật liệu")
+            new_description = st.text_input("Mô tả vật liệu")
+            
             machine_options = ['Chọn loại máy'] + machine_types['machine'].tolist()
-            selected_machine = st.selectbox("Loại máy", machine_options, key="machine_select")
+            selected_machine = st.selectbox("Loại máy sử dụng", machine_options, key="machine_select")
+            
             machine_type_id = (
                 machine_types[machine_types['machine'] == selected_machine]['id'].values[0]
                 if selected_machine != 'Chọn loại máy' else None
             )
 
             new_part_no = st.text_input("Part No")
-            new_bin = st.text_input("Bin")
-            new_cost_center = st.text_input("Cost Center")
-            new_price = st.number_input("Price", min_value=0.0, step=0.01)
-            new_stock = st.number_input("Stock", min_value=0, step=1)
-            new_safety_stock = st.number_input("Safety Stock", min_value=0, step=1)
-            safety_check = st.radio("Kiểm tra tồn kho an toàn?", ("Yes", "No"))
+            new_bin = st.text_input("Vị trí lưu (Bin)")
+            new_cost_center = st.text_input("Mã trung tâm chi phí")
+            new_price = st.number_input("Đơn giá ($)", min_value=0.0, step=0.01)
+            new_stock = st.number_input("Số lượng nhập", min_value=0, step=1)
+            new_safety_stock = st.number_input("Tồn kho an toàn", min_value=0, step=1)
+            
+            safety_check = st.radio("Có kiểm tra tồn kho an toàn không?", ("Có", "Không"))
+
             selected_employee = st.selectbox(
-                "Người thực hiện", 
+                "Người thực hiện thao tác", 
                 employees.apply(lambda x: f"{x['amann_id']} - {x['name']}", axis=1).tolist(), 
                 key="employee_select"
             )
 
-            if st.button("✅ Xác nhận thêm vật liệu mới"):
+            if st.button("✅ Xác nhận thêm mới"):
                 if new_material_no and new_description and machine_type_id:
-                    part_no = new_part_no if new_part_no else "N/A"
+                    part_no = new_part_no if new_part_no else "Không có"
                     empl_id = selected_employee.split(" - ")[0]
                     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
                     with engine.begin() as conn:
+                        # Thêm vật liệu mới vào bảng spare_parts
                         conn.execute(text(""" 
                             INSERT INTO spare_parts 
                             (material_no, description, part_no, machine_type_id, bin, cost_center, price, stock, 
-                             safety_stock, safety_stock_check, import_date) 
+                            safety_stock, safety_stock_check, import_date) 
                             VALUES (:material_no, :description, :part_no, :machine_type_id, :bin, :cost_center, 
                                     :price, :stock, :safety_stock, :safety_stock_check, :import_date)
                         """), {
@@ -273,11 +244,11 @@ def show_material_page():
                             "price": new_price,
                             "stock": new_stock,
                             "safety_stock": new_safety_stock,
-                            "safety_stock_check": 1 if safety_check == "Yes" else 0,
+                            "safety_stock_check": 1 if safety_check == "Có" else 0,
                             "import_date": current_time
                         })
 
-                        # Ghi nhận lịch sử nhập kho ban đầu
+                        # Nếu có tồn kho ban đầu thì ghi nhận vào lịch sử nhập kho
                         if new_stock > 0:
                             conn.execute(text("""
                                 INSERT INTO import_export (part_id, quantity, mc_pos_id, empl_id, date, reason, im_ex_flag)
@@ -289,31 +260,36 @@ def show_material_page():
                                 "date": current_time
                             })
 
-                    st.success(f"✅ Đã thêm vật liệu {new_material_no} và cập nhật lịch sử nhập kho.")
+                    st.success(f"✅ Đã thêm vật liệu **{new_material_no}** và ghi nhận lịch sử nhập kho.")
                     st.rerun()
                 else:
                     st.error("⚠️ Vui lòng nhập đầy đủ thông tin và chọn loại máy hợp lệ.")
+
 
     # ---------------------- NHẬP KHO VẬT LIỆU CÓ SẴN ------------------------
     with col2:
         st.subheader("Nhập kho linh kiện")
         with st.expander("Form nhập kho"):
-            keyword = st.text_input("Tìm kiếm linh kiện (Material No hoặc Description)")
+            keyword = st.text_input("🔎 Tìm kiếm linh kiện (Material No hoặc Mô tả)")
             filtered = spare_parts[
                 spare_parts['material_no'].str.contains(keyword, case=False, na=False) |
                 spare_parts['description'].str.contains(keyword, case=False, na=False)
             ] if keyword else spare_parts
 
             if not filtered.empty:
-                part_options = filtered.apply(lambda x: f"{x['part_no']} - {x['material_no']} - {x['description']}", axis=1).tolist()
-                selected_part = st.selectbox("Chọn linh kiện", part_options, key="part_select")
+                part_options = filtered.apply(
+                    lambda x: f"{x['part_no']} - {x['material_no']} - {x['description']}", axis=1
+                ).tolist()
+                selected_part = st.selectbox("Chọn linh kiện để nhập", part_options, key="part_select")
             else:
-                st.warning("Không tìm thấy linh kiện phù hợp.")
+                st.warning("⚠️ Không tìm thấy linh kiện phù hợp.")
                 selected_part = None
 
             quantity = st.number_input("Số lượng nhập", min_value=1)
+            input_price = st.number_input("Đơn giá ($)", min_value=0.0, step=0.01)
+
             import_employee = st.selectbox(
-                "Người thực hiện", 
+                "Người thực hiện thao tác", 
                 employees.apply(lambda x: f"{x['amann_id']} - {x['name']}", axis=1).tolist(), 
                 key="import_employee_select"
             )
@@ -325,6 +301,7 @@ def show_material_page():
                     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
                     with engine.begin() as conn:
+                        # Ghi nhận vào bảng lịch sử nhập kho
                         conn.execute(text(""" 
                             INSERT INTO import_export (part_id, quantity, mc_pos_id, empl_id, date, reason, im_ex_flag)
                             VALUES (:part_id, :quantity, NULL, :empl_id, :date, 'Nhập kho', 1)
@@ -335,18 +312,23 @@ def show_material_page():
                             "date": current_time
                         })
 
+                        # Cập nhật tồn kho và đơn giá nếu cần
                         conn.execute(text(""" 
                             UPDATE spare_parts 
-                            SET stock = stock + :quantity, import_date = :import_date 
+                            SET stock = stock + :quantity, 
+                                price = :price, 
+                                import_date = :import_date 
                             WHERE material_no = :part_id
                         """), {
                             "quantity": quantity,
+                            "price": input_price,
                             "part_id": part_id,
                             "import_date": current_time
                         })
 
-                    st.success("✅ Nhập kho thành công.")
+                    st.success("✅ Nhập kho thành công và đã cập nhật đơn giá.")
                     st.rerun()
+
                 
 
          

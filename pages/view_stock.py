@@ -8,7 +8,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 def show_view_stock():
-    st.markdown("<h1 style='text-align: center;'>View Stock</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Tồn kho</h1>", unsafe_allow_html=True)
 
     # Kết nối cơ sở dữ liệu
     engine = get_engine()
@@ -118,7 +118,7 @@ def show_view_stock():
 
         # --- Hiển thị thẻ thông tin (6 ô) ---
 
-        col1, col2, col3, col4, col5 = st.columns(5)
+        col1, col2, col3, col4 = st.columns(4)
 
 
         def styled_card(title, value, icon="📦", color="#83c5be"):
@@ -139,19 +139,19 @@ def show_view_stock():
             """
 
         with col1:
-            st.markdown(styled_card("Number of Items", total_items, ""), unsafe_allow_html=True)
+            st.markdown(styled_card("Số lượng vật tư", f"{total_items} loại", ""), unsafe_allow_html=True)
 
         with col2:
-            st.markdown(styled_card("Total Stock", total_stock, ""), unsafe_allow_html=True)
+            st.markdown(styled_card("Tổng số lượng tồn kho hiện tại", f"{total_stock} cái", ""), unsafe_allow_html=True)
 
         with col3:
-            st.markdown(styled_card("Total Stock Value", f"{total_value:,.0f}", ""), unsafe_allow_html=True)
+            st.markdown(styled_card("Tổng giá trị tồn kho", f"${total_value:,.0f}", "") , unsafe_allow_html=True)
 
         with col4:
-            st.markdown(styled_card("Stock < Safety_Stock", len(low_stock_items), "", "#83c5be"), unsafe_allow_html=True)
+            st.markdown(styled_card("Số mã vật tư dưới mức an toàn", len(low_stock_items), "", "#83c5be"), unsafe_allow_html=True)
 
-        with col5:
-            st.markdown(styled_card("Different Machine Types", machine_count, "", "#83c5be"), unsafe_allow_html=True)
+        
+
 
         
 
@@ -179,70 +179,67 @@ def show_view_stock():
     if selected_machine != 'Tất cả':
         df_filtered = df_filtered[df_filtered['machine_type'] == selected_machine]
 
-    
-    # Cấu hình bảng AgGrid
+# ==== LỌC DANH SÁCH MÃ THIẾU TỪ df_filtered ====
+    low_stock_filtered = df_filtered[df_filtered['stock'] < df_filtered['safety_stock']]
+
+    # ==== CẤU HÌNH BẢNG AGGRID ====
     gb = GridOptionsBuilder.from_dataframe(df_filtered)
 
-    # Ẩn cột image_url và ẩn cột index
     gb.configure_column("image_url", hide=True)
-    gb.configure_column("index", hide=True)  # Ẩn cột index
+    gb.configure_column("index", hide=True)
     gb.configure_column("storage_days", hide=True)
-   
 
-    # Cấu hình cột mặc định
     gb.configure_default_column(
         filter=False, sortable=True, editable=False, resizable=True,
         cellStyle=JsCode(""" 
             function(params) { 
                 return { 
                     textAlign: 'center', 
-                    border: '1px solid black',  // Viền ô
-                    padding: '10px'  // Tăng padding ô
+                    border: '1px solid black',
+                    padding: '10px'
                 }; 
             }
         """)
     )
 
-    # Cấu hình cột stock để tô màu khi giá trị nhỏ hơn hoặc bằng 5
     gb.configure_column(
-    "stock",
-    cellStyle=JsCode("""
-        function(params) {
-            let style = {
-                textAlign: 'center',
-                border: '1px solid black',
-                padding: '10px'
-            };
-            if (params.value < params.data.safety_stock) {
-                style.backgroundColor = '#ffff99';  // Màu vàng nhạt highlight
-                style.fontWeight = 'bold';
+        "stock",
+        cellStyle=JsCode("""
+            function(params) {
+                let style = {
+                    textAlign: 'center',
+                    border: '1px solid black',
+                    padding: '10px'
+                };
+                if (params.value < params.data.safety_stock) {
+                    style.backgroundColor = '#ffff99';
+                    style.fontWeight = 'bold';
+                }
+                return style;
             }
-            return style;
-        }
-    """)
-)
+        """)
+    )
 
-    
-    
-    
-    # Nếu có ít nhất một sản phẩm tồn kho thấp hơn mức an toàn, hiển thị cảnh báo
-    if not low_stock_items.empty:
+    # ==== HIỂN THỊ CẢNH BÁO VÀ BẢNG MÃ THIẾU ====
+    if not low_stock_filtered.empty:
         st.markdown(
             f"""
             <div style='background-color: #ff4d4d; padding: 20px; font-size: 20px;
                         color: white; font-weight: bold; text-align: center; border-radius: 10px;'>
-                ⚠️ Cảnh báo! Có {len(low_stock_items)} sản phẩm có tồn kho thấp hơn mức an toàn! Kiểm tra và bổ sung ngay!
+                ⚠️ Cảnh báo! Có {len(low_stock_filtered)} vật tư có tồn kho thấp hơn mức an toàn! Kiểm tra và bổ sung ngay!
             </div>
             """,
             unsafe_allow_html=True
         )
         with st.expander("Xem chi tiết mã thiếu"):
             st.dataframe(
-                low_stock_items[[
-                    'material_no', 'part_no', 'description', 'stock', 'safety_stock', 'machine_type', 'bin','cost_center','price','import_date','export_date',
+                low_stock_filtered[[
+                    'material_no', 'part_no', 'description', 'stock', 'safety_stock',
+                    'machine_type', 'bin', 'cost_center', 'price', 'import_date', 'export_date',
                 ]].reset_index(drop=True),
                 use_container_width=True
             )
+
 
     # Tạo khoảng cách 30px bên dưới
     st.markdown("<div style='margin-top:30px'></div>", unsafe_allow_html=True)

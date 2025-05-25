@@ -26,7 +26,7 @@ def load_machines(engine, selected_group, selected_pos, search_name):
     return df
 
 def show_machine_page():
-    st.markdown("<h1 style='text-align: center;'>🔧 Machine Management</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Quản lý máy móc</h1>", unsafe_allow_html=True)
     engine = get_engine()
 
     with engine.connect() as conn:
@@ -86,44 +86,7 @@ def show_machine_page():
         # Hiển thị dữ liệu dưới dạng bảng
         st.dataframe(df)  # Hiển thị bảng dữ liệu với cột máy và vị trí
 
-        # ======== Vẽ 2 biểu đồ trong mỗi hàng ngang ========
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            # Biểu đồ số lượng máy theo nhóm
-            group_count = df.groupby('group_mc_name').size().reset_index(name='Machine Count')
-            fig1 = px.bar(group_count, x='group_mc_name', y='Machine Count', title="Số lượng máy theo nhóm",
-                        color_discrete_sequence=['#00BFA6'])  # Màu xanh ngọc
-
-            fig1.update_layout(
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='rgba(0,0,0,0)',
-    font=dict(color='white'),  # màu cho axis ticks và labels
-    title=dict(text="Số lượng máy theo nhóm", font=dict(color='white', size=20)),
-    xaxis=dict(title_font=dict(color='white'), tickfont=dict(color='white')),
-    yaxis=dict(title_font=dict(color='white'), tickfont=dict(color='white'))
-)
-
-            st.plotly_chart(fig1, use_container_width=True)
-
-        with col2:
-            # Biểu đồ số lượng máy theo vị trí
-            pos_count = df.groupby('machine_pos').size().reset_index(name='Machine Count')
-            fig2 = px.bar(pos_count, x='machine_pos', y='Machine Count', title="Số lượng máy theo vị trí",
-                        color_discrete_sequence=['#00BFA6'])  # Màu xanh ngọc
-
-            fig2.update_layout(
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='rgba(0,0,0,0)',
-    font=dict(color='white'),
-    title=dict(text="Số lượng máy theo vị trí", font=dict(color='white', size=20)),
-    xaxis=dict(title_font=dict(color='white'), tickfont=dict(color='white')),
-    yaxis=dict(title_font=dict(color='white'), tickfont=dict(color='white'))
-)
-
-            st.plotly_chart(fig2, use_container_width=True)
-
+        
        
     # ======== Thêm máy mới ========
     st.markdown("---")
