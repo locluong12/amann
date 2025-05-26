@@ -378,7 +378,8 @@ def show_export_stock():
         st.markdown('<p style="color:white; margin-bottom:4px;">Số lượng xuất kho</p>', unsafe_allow_html=True)
         quantity = st.number_input("", min_value=1, value=1, key="quantity", label_visibility="hidden")
 
-        is_foc = st.checkbox("Xuất kho miễn phí (FOC)", key="foc_checkbox")
+        st.markdown('<span style="color:white; font-weight:bold;">Xuất kho miễn phí (FOC)</span>', unsafe_allow_html=True)
+        is_foc = st.checkbox("", key="foc_checkbox")
 
         if not is_foc:
             st.markdown('<p style="color:white; margin-bottom:4px;">✏️ Nhập lý do xuất kho</p>', unsafe_allow_html=True)
@@ -493,14 +494,26 @@ def show_export_stock():
 
         # Merge df_export với df_spare_parts theo 'part_id' = 'material_no'
         df_export = df_export.merge(df_spare_parts, left_on='part_id', right_on='material_no', how='left')
+        
+
+        st.markdown('<span style="color:white; font-weight:bold;">Tìm kiếm theo Mã phụ tùng / Mô tả</span>', unsafe_allow_html=True)
+        search_keyword_export = st.text_input("", key="search", placeholder="Nhập Mã phụ tùng hoặc Mô tả")
+
+        # Nếu có từ khóa tìm kiếm, lọc dữ liệu theo part_id hoặc description
+        if search_keyword_export.strip() != "":
+            mask_export = (
+                df_export['part_id'].str.contains(search_keyword_export, case=False, na=False) |
+                df_export['description'].str.contains(search_keyword_export, case=False, na=False)
+            )
+            df_export = df_export[mask_export]
+
 
         # Chuẩn bị dataframe để hiển thị
         df_display = df_export[['date', 'part_id', 'description', 'quantity', 'Type', 'bin', 'employee_name', 'mc_pos', 'reason']].copy()
         df_display.columns = ['Ngày', 'Mã phụ tùng', 'Mô tả', 'Số lượng', 'Loại', 'Vị trí lưu (BIN)', 'Nhân viên', 'Vị trí máy', 'Lý do']
 
-        st.markdown("### 📋 Lịch sử xuất kho")
+        st.markdown(" Lịch sử xuất kho")
         st.dataframe(df_display)
-
 
         # Tạo file Excel
         output = io.BytesIO()
@@ -529,3 +542,5 @@ def show_export_stock():
             file_name=f"Export_History_{selected_year}_{selected_month}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+    else:
+        st.info("Không có dữ liệu xuất kho trong tháng đã chọn.")
