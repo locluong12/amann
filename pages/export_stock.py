@@ -143,6 +143,7 @@ def show_export_stock():
 
     # ====== Tính tổng xuất kho và tổng chi phí ======
     total_export_quantity = export_stats['total_quantity'].sum() if not export_stats.empty else 0
+    # Tổng chi phí đã là USD, không cần quy đổi
     total_export_cost = (cost_data['total_qty'] * cost_data['price']).sum() if not cost_data.empty else 0
 
     # Hiển thị thông báo dưới bộ lọc
@@ -161,9 +162,10 @@ def show_export_stock():
         Tổng xuất kho tháng <span style='color: #ffffff;'>{int(selected_month):02d}</span> năm 
         <span style='color: #ffffff;'>{selected_year}</span>: 
         <span style='color: #ffffff'>{int(total_export_quantity):,}</span> cái, 
-        Tổng chi phí: <span style='color: #ffffff'>{int(total_export_cost):,}</span> VNĐ
+        Tổng chi phí: <span style='color: #ffffff'>${total_export_cost:,.0f}</span> USD
     </div>
     """, unsafe_allow_html=True)
+
 
     # ====== Hiển thị 2 ô tổng tiền và tổng xuất kho ngay bên dưới bộ lọc ======
     col_total_1, col_total_2 = st.columns(2)
@@ -196,7 +198,7 @@ def show_export_stock():
         st.markdown(f"""
             <div style="{box_style_1}">
                 Tổng chi phí<br>
-                <span style="font-size:28px;">{total_export_cost:,.0f} VND</span>
+                <span style="font-size:28px;">${total_export_cost:,.0f} USD</span>
             </div>
         """, unsafe_allow_html=True)
     with col_total_2:
@@ -468,12 +470,17 @@ def show_export_stock():
                     if not is_foc:
                         conn.execute(text("""
                             UPDATE spare_parts
-                            SET stock = stock - :quantity
+                            SET 
+                                stock = stock - :quantity,
+                                export_date = :export_date
                             WHERE material_no = :part_id
                         """), {
                             "quantity": quantity,
+                            "export_date": now,
                             "part_id": part_id
                         })
+
+
 
                     st.success("✅ Xuất kho thành công!")
 
