@@ -432,6 +432,35 @@ def show_material_page():
 
         # Hiển thị bảng dữ liệu
         st.dataframe(display_df[columns_to_show].sort_values(by='Ngày nhập kho', ascending=False), use_container_width=True)
-  
+
+        # 💅 CSS tùy chỉnh cho nút tải xuống
+        st.markdown("""
+            <style>
+            div.stDownloadButton > button:first-child {
+                background-color: #20c997;
+                color: white;
+                border: none;
+            }
+            div.stDownloadButton > button:first-child:hover {
+                background-color: #17a2b8;
+                color: white;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+        # ✅ Nút xuất Excel
+        from io import BytesIO
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            display_df[columns_to_show].to_excel(writer, index=False, sheet_name='Lich_su_nhap_kho')
+        output.seek(0)
+
+        st.download_button(
+            label="📤 Tải xuống Excel",
+            data=output,
+            file_name=f"Lich_su_nhap_kho_{st.session_state.selected_month}_{st.session_state.selected_year}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
     else:
         st.info("Không có dữ liệu nhập kho trong tháng đã chọn.")
