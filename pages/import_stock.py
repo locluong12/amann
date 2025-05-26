@@ -284,9 +284,8 @@ def show_material_page():
             else:
                 st.warning("⚠️ Không tìm thấy linh kiện phù hợp.")
                 selected_part = None
-
-            quantity = st.number_input("Số lượng nhập", min_value=1, key="input_quantity")
-            input_price = st.number_input("Đơn giá ($)", min_value=0.0, step=0.01, key="input_price")
+            quantity = st.number_input("Số lượng nhập", min_value=1, key="quantity_input")
+            input_price = st.number_input("Đơn giá ($)", min_value=0.0, step=0.01, key="input_price_input")
 
 
             import_employee = st.selectbox(
@@ -294,42 +293,145 @@ def show_material_page():
                 employees.apply(lambda x: f"{x['amann_id']} - {x['name']}", axis=1).tolist(), 
                 key="import_employee_select"
             )
-
             if st.button("📥 Xác nhận nhập kho"):
-                if selected_part:
-                    part_id = selected_part.split(" - ")[1]  # material_no
-                    empl_id = import_employee.split(" - ")[0]
-                    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                if selected_part and quantity > 0:
+                    part_id = selected_part.split(" - ")[1].strip()
+                    empl_id = import_employee.split(" - ")[0].strip()
+                    current_time = datetime.now()
+                    current_time_str = current_time.strftime('%Y-%m-%d %H:%M:%S')
 
                     with engine.begin() as conn:
-                        # Ghi nhận vào bảng lịch sử nhập kho
-                        conn.execute(text(""" 
-                            INSERT INTO import_export (part_id, quantity, mc_pos_id, empl_id, date, reason, im_ex_flag)
-                            VALUES (:part_id, :quantity, NULL, :empl_id, :date, 'Nhập kho', 1)
+                        # Kiểm tra đã có bản ghi nhập kho trong tháng hiện tại cho part_id chưa
+                        existing_record = conn.execute(text("""
+                            SELECT id, quantity FROM import_export
+                            WHERE part_id = :part_id
+                            AND EXTRACT(YEAR FROM date) = :year
+                            AND EXTRACT(MONTH FROM date) = :month
+                            AND im_ex_flag = 1
+                            LIMIT 1
                         """), {
                             "part_id": part_id,
-                            "quantity": quantity,
-                            "empl_id": empl_id,
-                            "date": current_time
-                        })
+                            "year": current_time.year,
+                            "month": current_time.month
+                        }).fetchone()
 
-                        # Cập nhật tồn kho và đơn giá nếu cần
-                        conn.execute(text(""" 
-                            UPDATE spare_parts 
-                            SET stock = stock + :quantity, 
-                                price = :price, 
-                                import_date = :import_date 
+                        if existing_record:
+                            # Cộng dồn số lượng và cập nhật lại thời gian nhập kho
+                            record_id = existing_record.id
+                            conn.execute(text("""
+                                UPDATE import_export
+                                SET quantity = quantity + :quantity,
+                                    date = :date
+                                WHERE id = :id
+                            """), {
+                                "quantity": quantity,
+                                "date": current_time_str,
+                                "id": record_id
+                            })
+                        else:
+                            # Thêm bản ghi mới nếu chưa có
+                            conn.execute(text("""
+                                INSERT INTO import_export (part_id, quantity, mc_pos_id, empl_id, date, reason, im_ex_flag)
+                                VALUES (:part_id, :quantity, NULL, :empl_id, :date, 'Nhập kho', 1)
+                            """), {
+                                "part_id": part_id,
+                                "quantity": quantity,
+                                "empl_id": empl_id,
+                                "date": current_time_str
+                            })
+
+                        # Cập nhật tồn kho spare_parts
+                        result = conn.execute(text("""
+                            UPDATE spare_parts
+                            SET stock = COALESCE(stock, 0) + :quantity,
+                                price = :price,
+                                import_date = :import_date
                             WHERE material_no = :part_id
                         """), {
                             "quantity": quantity,
                             "price": input_price,
                             "part_id": part_id,
-                            "import_date": current_time
+                            "import_date": current_time_str
                         })
+
+                        if result.rowcount == 0:
+                            conn.execute(text("""
+                                INSERT INTO spare_parts (material_no, stock, price, import_date)
+                                VALUES (:part_id, :quantity, :price, :import_date)
+                            """), {
+                                "part_id": part_id,
+                                "quantity": quantity,
+                                "price": input_price,
+                                "import_date": current_time_str
+                            })
 
                     st.success("✅ Nhập kho thành công và đã cập nhật đơn giá.")
                     st.rerun()
+                else:
+                    st.error("Vui lòng chọn phụ tùng và nhập số lượng hợp lệ.")
 
-                
 
-         
+
+
+                st.markdown("---")
+    st.subheader("Lịch sử nhập kho")
+
+    # Lấy dữ liệu nhập kho từ DB
+    import_history_df = fetch_import_history(engine)
+
+    # Đảm bảo cột date dạng datetime
+    import_history_df['date'] = pd.to_datetime(import_history_df['date'], errors='coerce')
+    import_history_df['year'] = import_history_df['date'].dt.year
+    import_history_df['month'] = import_history_df['date'].dt.month
+
+    # Lấy bảng spare_parts có material_no và bin
+    query_spare_part = "SELECT material_no, bin FROM spare_parts"
+    spare_part_df = pd.read_sql(query_spare_part, engine)
+
+    # Chuẩn hóa dữ liệu dạng string, loại bỏ khoảng trắng thừa
+    import_history_df['part_id'] = import_history_df['part_id'].astype(str).str.strip()
+    spare_part_df['material_no'] = spare_part_df['material_no'].astype(str).str.strip()
+
+    # Merge để lấy thông tin bin
+    import_history_df = import_history_df.merge(
+        spare_part_df[['material_no', 'bin']],
+        left_on='part_id',
+        right_on='material_no',
+        how='left'
+    )
+
+    # Xóa cột thừa và thay thế NaN
+    import_history_df.drop(columns=['material_no'], inplace=True)
+    import_history_df['bin'] = import_history_df['bin'].fillna('Chưa xác định')
+
+    # Lọc theo tháng và năm người dùng chọn
+    filtered_data = import_history_df[
+        (import_history_df['year'] == st.session_state.selected_year) &
+        (import_history_df['month'] == st.session_state.selected_month)
+    ]
+
+    if not filtered_data.empty:
+        # Đổi tên cột để hiển thị
+        display_df = filtered_data.rename(columns={
+            'date': 'Ngày nhập kho',
+            'part_id': 'Mã phụ tùng',
+            'description': 'Mô tả',
+            'quantity': 'Số lượng',
+            'Type': 'Loại',
+            'bin': 'Vị trí lưu (BIN)',
+            'employee_name': 'Nhân viên',
+            'reason': 'Lý do'
+        }).copy()
+
+        # Định dạng ngày tháng đầy đủ
+        display_df['Ngày nhập kho'] = pd.to_datetime(display_df['Ngày nhập kho']).dt.strftime("%Y-%m-%d %H:%M")
+
+        # Chọn cột hiển thị
+        columns_to_show = ['Ngày nhập kho', 'Mã phụ tùng', 'Mô tả', 'Số lượng', 'Loại', 'Vị trí lưu (BIN)', 'Nhân viên', 'Lý do']
+        columns_to_show = [col for col in columns_to_show if col in display_df.columns]
+
+        # Hiển thị bảng dữ liệu
+        st.dataframe(display_df[columns_to_show].sort_values(by='Ngày nhập kho', ascending=False), use_container_width=True)
+  
+    else:
+        st.info("Không có dữ liệu nhập kho trong tháng đã chọn.")
