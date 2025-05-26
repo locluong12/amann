@@ -468,17 +468,26 @@ def show_export_stock():
                         })
 
                     if not is_foc:
+                        # Giảm tồn kho khi không phải FOC
                         conn.execute(text("""
                             UPDATE spare_parts
-                            SET 
-                                stock = stock - :quantity,
-                                export_date = :export_date
+                            SET stock = stock - :quantity
                             WHERE material_no = :part_id
                         """), {
                             "quantity": quantity,
-                            "export_date": now,
                             "part_id": part_id
                         })
+
+                    # Cập nhật export_date dù có FOC hay không
+                    conn.execute(text("""
+                        UPDATE spare_parts
+                        SET export_date = :export_date
+                        WHERE material_no = :part_id
+                    """), {
+                        "export_date": now,
+                        "part_id": part_id
+                    })
+
 
 
 
