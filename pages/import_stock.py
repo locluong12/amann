@@ -373,8 +373,11 @@ def show_material_page():
 
 
 
-                st.markdown("---")
+    st.markdown("---")
     st.subheader("Lịch sử nhập kho")
+
+    # Thêm ô nhập liệu tìm kiếm theo material_no hoặc description
+    search_keyword = st.text_input("Tìm kiếm theo Mã phụ tùng/Mô tả", "")
 
     # Lấy dữ liệu nhập kho từ DB
     import_history_df = fetch_import_history(engine)
@@ -409,6 +412,14 @@ def show_material_page():
         (import_history_df['year'] == st.session_state.selected_year) &
         (import_history_df['month'] == st.session_state.selected_month)
     ]
+
+    # Nếu có từ khóa tìm kiếm, lọc thêm theo material_no hoặc description
+    if search_keyword.strip() != "":
+        mask = (
+            filtered_data['part_id'].str.contains(search_keyword, case=False, na=False) |
+            filtered_data['description'].str.contains(search_keyword, case=False, na=False)
+        )
+        filtered_data = filtered_data[mask]
 
     if not filtered_data.empty:
         # Đổi tên cột để hiển thị
