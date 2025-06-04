@@ -319,7 +319,7 @@ def show_export_stock():
         filtered_data['machine_name'] = filtered_data['machine_name'].astype(str).str.strip()
 
         machine_names = sorted(filtered_data['machine_name'].unique())
-        st.markdown('<p style="color:white; margin-bottom:4px;">Chọn máy (theo linh kiện)</p>', unsafe_allow_html=True)
+        st.markdown('<p style="color:white; margin-bottom:4px;">Chọn tên máy (theo linh kiện)</p>', unsafe_allow_html=True)
         machine_selected = st.selectbox("", machine_names, key="machine_selected_filtered", label_visibility="hidden")
 
         # Lấy vị trí máy theo máy được chọn
@@ -525,8 +525,17 @@ def show_export_stock():
 
 
         # Chuẩn bị dataframe để hiển thị
-        df_display = df_export[['date', 'part_id', 'description', 'quantity', 'Type', 'bin', 'employee_name', 'mc_pos', 'reason']].copy()
-        df_display.columns = ['Ngày', 'Mã phụ tùng', 'Mô tả', 'Số lượng', 'Loại', 'Vị trí lưu (BIN)', 'Nhân viên', 'Vị trí máy', 'Lý do']
+        # Trước khi merge, làm sạch cột machine_name:
+        machine_data['machine_name'] = machine_data['machine_name'].astype(str).str.strip()
+
+        # Thực hiện merge để thêm cột machine_name vào df_export theo key part_id <-> material_no
+        df_export = df_export.merge(machine_data[['material_no', 'machine_name']], 
+                                    left_on='part_id', right_on='material_no', how='left')
+
+        # Giờ df_export có thêm cột 'machine_name'
+        # Bạn có thể tạo df_display như mong muốn:
+        df_display = df_export[['date', 'part_id', 'description', 'quantity', 'Type', 'bin', 'employee_name', 'machine_name','mc_pos']].copy()
+        df_display.columns = ['Ngày', 'Mã phụ tùng', 'Mô tả', 'Số lượng', 'Loại', 'Vị trí lưu (BIN)', 'Nhân viên','Tên máy', 'Vị trí máy']
 
         st.markdown(" Lịch sử xuất kho")
         st.dataframe(df_display)
